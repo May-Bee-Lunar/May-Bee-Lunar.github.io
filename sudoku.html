@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            Sudoku!
+        </title>
+    </head>
+    <body style="overflow: hidden; margin: 0px">
+        <canvas style="background-color:black;" id="canvas"></canvas>
+        
+        <script>
+            // Get the HTML Canvas element!
+            let canvas = document.getElementById("canvas");
+            let context = canvas.getContext("2d");
+
+            // Initializes the Game Variables
+            let minimumSideLength;
+            let thickLineWidth = 10;
+            let thinLineWidth = 2;
+
+            // Resize the canvas when the window changes size.
+            resize();
+            window.addEventListener('resize', resize);
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                minimumSideLength = Math.min(canvas.width, canvas.height);
+            }
+
+            // Gets the mouse position at all times
+            let mouseX;
+            let mouseY;
+            document.addEventListener('mousemove', event => {
+                mouseX = event.clientX
+                mouseY = event.clientY
+            });
+
+
+
+            // Generate a random sudoku board! The actual algorithm is taken from https://stackoverflow.com/questions/6924216/how-to-generate-sudoku-boards-with-unique-solutions in bits & pieces
+            // Hey, if you are reading this code, pls tell me if I could make this algorithm better!
+
+            // This is the initial board. This could also be used on it's own as an initial board, but we're gonna shuffle it while following the sudoku rules!
+            let initialBoard = "123456789456789123789123456231564897564897231897231564312645978645978312978312645";
+
+            // Create a row, column, & digit order to shuffle
+            let temporaryArray = shuffleArray([shuffleArray([0, 1, 2]), shuffleArray([3, 4, 5]), shuffleArray([6, 7, 8])]);
+            let rowOrder = temporaryArray[0].concat(temporaryArray[1].concat(temporaryArray[2]));
+            temporaryArray = shuffleArray([shuffleArray([0, 1, 2]), shuffleArray([3, 4, 5]), shuffleArray([6, 7, 8])]);
+            let columnOrder = temporaryArray[0].concat(temporaryArray[1].concat(temporaryArray[2]));
+            let digitOrder = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+            // A helper function to randomly shuffle an array! Expected output: A shuffled version of the array
+            function shuffleArray(array) {
+                let outputArray = [];
+                while (array.length > 0) {
+                    let randomIndex = Math.floor(Math.random() * array.length);
+                    outputArray.push(array[randomIndex]);
+                    array.splice(randomIndex, 1);
+                }
+                return outputArray;
+            }
+            
+            // Now to assemble the board!
+            let currentBoard = "";
+            for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
+                for (let columnIndex = 0; columnIndex < 9; columnIndex++) {
+                    currentBoard = currentBoard.concat(digitOrder[Number(initialBoard.charAt(cordsToIndex(columnOrder[columnIndex], rowOrder[rowIndex]))) - 1]);
+                }
+            }
+
+            // A simple helper function to turn x & y cords into a 0-80 index number.
+            function cordsToIndex(x, y) {
+                return (x + y * 9);
+            }
+            
+            // Now time to randomly start popping numbers out! Right now we're gonna make an array of the order of positions we'll remove.
+            let removeNumberList = [];
+            for (let index = 0; index < 81; index++) {
+                removeNumberList.push(index);
+            }
+            removeNumberList = shuffleArray(removeNumberList);
+
+            // Start to remove the positions, & if the board has multiple solutions, undo the removing.
+            let solutionBoard = currentBoard
+        
+            for (let index = 0; index < 20; index++) {
+                currentBoard = changeCharAtIndex(currentBoard, removeNumberList[index], "0")
+                currentBoard = currentBoard.substr(0, removeNumberList[index]) + "0" + currentBoard.substr(removeNumberList[index] + 1);
+                if (!solver(currentBoard)) {
+                    currentBoard = changeCharAtIndex(currentBoard, removeNumberList[index], solutionBoard.charAt(index));
+                }
+            }
+
+            // Another helper function to return a string with a character changed at an index
+            function changeCharAtIndex(string, index, character) {
+                return string.substr(0, index) + character + string.substr(index + 1);
+            }
+
+            // this code is just taken from online. after so long of trying i just gave up.
+            // Of course with modifications to make the function work with a string instead of a 2d array.
+            function solver(board) {
+                
+                for(let index = 0; index < 81; index++){
+
+                    //Need to replace the cell with value if the cell is empty.
+                    if(board.charAt(index) == "0"){
+                        for(let digit = 1; digit < 10; digit++){
+
+                            //Checks with every possible value.
+                            if(validateDigit(board, index, digit)){
+                                changeCharAtIndex(board, index, digit);
+                                if(solver(board)){
+                                    return true
+                                }
+                                changeCharAtIndex(board, index, "0");
+                            }
+                        }
+                        return false
+                    }
+
+                }
+                return true
+            }
+
+            // This function will validate if a number can be placed in a cell. Expected output: A boolean value
+            function validateDigit(board, index, digit) {
+                let output = true;
+                let x = index % 9;
+                let y = Math.floor(index / 9)
+
+                for (let index = 0; index < 9; index++) {
+                    if (board.charAt(cordsToIndex(x, index)) == digit || board.charAt(cordsToIndex(index, y)) == digit) {
+                        output = false;
+                    }
+                }
+
+                let xSection = Math.floor(x / 3);
+                let ySection = Math.floor(y / 3);
+                for (let columnIndex = 0; columnIndex < 3; columnIndex++) {
+                    for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
+                        if (board.charAt(cordsToIndex(columnIndex + (xSection * 3), rowIndex + (ySection * 3))) == digit) {
+                            output = false;
+                        }
+                    }
+                }
+                
+                return output;
+            }
+
+            // This will be where most of the game's code takes place! :D
+            function main(currentTime) {
+
+                
+
+                // Rendering code!
+
+                // Clear the canvas
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Add all of the highlighting on the board!
+                context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                for (let columnIndex = 0; columnIndex < 9; columnIndex++) {
+                    for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
+                        if (mouseX > (columnIndex + 1) * (minimumSideLength / 11) && mouseY > (rowIndex + 1) * (minimumSideLength / 11) && mouseX < (columnIndex + 2) * (minimumSideLength / 11) && mouseY < (rowIndex + 2) * (minimumSideLength / 11)) {
+                            context.fillRect((columnIndex + 1) * (minimumSideLength / 11), (rowIndex + 1) * (minimumSideLength / 11), (minimumSideLength / 11), (minimumSideLength / 11))
+                        }
+                    }
+                }
+
+                // Drawing the board shape!
+                for (let index = 0; index < 10; index++) {
+                    context.beginPath();
+                    context.lineWidth = index % 3 == 0 ? thickLineWidth : thinLineWidth;
+                    context.strokeStyle = "white";
+                    context.moveTo((index + 1) * minimumSideLength / 11, minimumSideLength / 11);
+                    context.lineTo((index + 1) * minimumSideLength / 11, minimumSideLength / 11 * 10);
+                    context.moveTo(minimumSideLength / 11, (index + 1) * minimumSideLength / 11);
+                    context.lineTo(minimumSideLength / 11 * 10, (index + 1) * minimumSideLength / 11);
+                    context.stroke();
+                    context.closePath();
+                }
+                context.fillStyle = "white";
+                for (let columnIndex = 0; columnIndex < 2; columnIndex++) {
+                    for (let rowIndex = 0; rowIndex < 2; rowIndex++) {
+                        context.beginPath();
+                        context.arc(minimumSideLength / 11 * (columnIndex == 0 ? 1 : 10), minimumSideLength / 11 * (rowIndex == 0 ? 1 : 10), thickLineWidth / 2, 0, 2 * Math.PI);
+                        context.fill();
+                        context.closePath();
+                    }
+                }
+                
+                // Drawing the numbers on the board!
+                context.textAlign = "center";
+                context.font = minimumSideLength / 11 + "px sans-serif";
+                context.textBaseline = "middle";
+                for (let index = 0; index < 81; index++) {
+                    if (currentBoard.charAt(index) == "0") {
+
+                    } else {
+                        context.fillText(currentBoard.charAt(index), ((index % 9) + 1.5) * minimumSideLength / 11, (Math.floor(index / 9) + 1.6) * minimumSideLength / 11);
+                    }
+                    
+                }
+
+                requestAnimationFrame(main);
+            }
+            requestAnimationFrame(main);
+            
+        </script>
+    </body>
+</html>

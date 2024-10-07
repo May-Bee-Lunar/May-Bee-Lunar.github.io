@@ -41,7 +41,7 @@
             let timerElement = new Element(null, null, null, null);
             let menuButtonElement = new Element(null, null, null, null);
             let numberSelectorElement = new Element(null, null, null, null);
-            let hintButtonElement = new Element(null, null, null, null);
+            let noteButtonElement = new Element(null, null, null, null);
 
             // A secret for later ;)
             let powerUpSelectorElement = new Element(null, null, null, null);
@@ -87,13 +87,13 @@
                             numberSelectorElement.width = elementUnit * 3;
                             numberSelectorElement.height = elementUnit * 3;
 
-                            hintButtonElement.x = elementUnit * 15;
-                            hintButtonElement.y = elementUnit * 3;
-                            hintButtonElement.width = canvas.width - elementUnit * 16;
-                            hintButtonElement.height = elementUnit * 3;
-                            if (hintButtonElement.width < elementUnit) {
-                                hintButtonElement.x = canvas.width - elementUnit * 2;
-                                hintButtonElement.width = elementUnit;
+                            noteButtonElement.x = elementUnit * 15;
+                            noteButtonElement.y = elementUnit * 3;
+                            noteButtonElement.width = canvas.width - elementUnit * 16;
+                            noteButtonElement.height = elementUnit * 3;
+                            if (noteButtonElement.width < elementUnit) {
+                                noteButtonElement.x = canvas.width - elementUnit * 2;
+                                noteButtonElement.width = elementUnit;
                             }
                             
                             break;
@@ -124,10 +124,10 @@
                             numberSelectorElement.width = elementUnit * 3;
                             numberSelectorElement.height = elementUnit * 3;
 
-                            hintButtonElement.x = elementUnit * 14;
-                            hintButtonElement.y = elementUnit * 3;
-                            hintButtonElement.width = canvas.width - elementUnit * 15;
-                            hintButtonElement.height = elementUnit * 3;
+                            noteButtonElement.x = elementUnit * 14;
+                            noteButtonElement.y = elementUnit * 3;
+                            noteButtonElement.width = canvas.width - elementUnit * 15;
+                            noteButtonElement.height = elementUnit * 3;
                             break;
                         case 2:
                             boardElement.x = elementUnit;
@@ -151,10 +151,10 @@
                             numberSelectorElement.width = elementUnit * 3;
                             numberSelectorElement.height = elementUnit * 3;
 
-                            hintButtonElement.x = elementUnit * 11;
-                            hintButtonElement.y = elementUnit * 7;
-                            hintButtonElement.width = canvas.width - elementUnit * 12;
-                            hintButtonElement.height = elementUnit * 3;
+                            noteButtonElement.x = elementUnit * 11;
+                            noteButtonElement.y = elementUnit * 7;
+                            noteButtonElement.width = canvas.width - elementUnit * 12;
+                            noteButtonElement.height = elementUnit * 3;
                             break;
                     }
                 } else if (orientationMode == "vertical") {
@@ -188,13 +188,13 @@
                             numberSelectorElement.width = elementUnit * 3;
                             numberSelectorElement.height = elementUnit * 3;
 
-                            hintButtonElement.x = elementUnit;
-                            hintButtonElement.y = elementUnit * 17;
-                            hintButtonElement.width = elementUnit * 3;
-                            hintButtonElement.height = canvas.height - elementUnit * 18;
+                            noteButtonElement.x = elementUnit;
+                            noteButtonElement.y = elementUnit * 17;
+                            noteButtonElement.width = elementUnit * 3;
+                            noteButtonElement.height = canvas.height - elementUnit * 18;
                             if (canvas.width / canvas.height > 11 / 19) {
-                                hintButtonElement.y = elementUnit * 16;
-                                hintButtonElement.height = canvas.height - elementUnit * 17
+                                noteButtonElement.y = elementUnit * 16;
+                                noteButtonElement.height = canvas.height - elementUnit * 17
                             }
                             
                             break;
@@ -221,10 +221,10 @@
                             numberSelectorElement.width = elementUnit * 3;
                             numberSelectorElement.height = elementUnit * 3;
 
-                            hintButtonElement.x = elementUnit * 4;
-                            hintButtonElement.y = canvas.height - elementUnit * 4;
-                            hintButtonElement.width = elementUnit * 2;
-                            hintButtonElement.height = elementUnit * 3;
+                            noteButtonElement.x = elementUnit * 4;
+                            noteButtonElement.y = canvas.height - elementUnit * 4;
+                            noteButtonElement.width = elementUnit * 2;
+                            noteButtonElement.height = elementUnit * 3;
                             break;
                         case 2:
                             boardElement.x = elementUnit;
@@ -248,10 +248,10 @@
                             numberSelectorElement.width = elementUnit * 3;
                             numberSelectorElement.height = elementUnit * 3;
 
-                            hintButtonElement.x = elementUnit * 5;
-                            hintButtonElement.y = elementUnit * 13;
-                            hintButtonElement.width = elementUnit * 5;
-                            hintButtonElement.height = elementUnit * 3;
+                            noteButtonElement.x = elementUnit * 5;
+                            noteButtonElement.y = elementUnit * 13;
+                            noteButtonElement.width = elementUnit * 5;
+                            noteButtonElement.height = elementUnit * 3;
                             break;
                     }
                     console.log(compressed);
@@ -562,12 +562,12 @@
                 }
 
                 // The hint button (the button doesn't do anything yet :()
-                if (mouseOverlap(hintButtonElement.x, hintButtonElement.y, hintButtonElement.width, hintButtonElement.height)) {
+                if (mouseOverlap(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height)) {
                     context.fillStyle = "rgba(255, 255, 255, 0.5)";
-                    context.fillRect(hintButtonElement.x, hintButtonElement.y, hintButtonElement.width, hintButtonElement.height);
+                    context.fillRect(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height);
                     context.fillStyle = boardColor;
                 }
-                context.strokeRect(hintButtonElement.x, hintButtonElement.y, hintButtonElement.width, hintButtonElement.height);
+                context.strokeRect(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height);
                 
 
                 requestAnimationFrame(main);

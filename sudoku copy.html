@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            Sudoku!
+        </title>
+    </head>
+    <body style="overflow: hidden; margin: 0px">
+        <canvas style="background-color:black;" id="canvas"></canvas>
+        
+        <script>
+            // Get the HTML Canvas element!
+            let canvas = document.getElementById("canvas");
+            let context = canvas.getContext("2d");
+
+            // Initializes the Game Variables
+            let minimumSideLength;
+            let orientationMode;
+            let selectedDigit = 1;
+            let boardColor = "rgba(255, 255, 255, 1)"
+            let thickLineWidth = 5;
+            let thinLineWidth = 2;
+            let textSizeMultiplier = 1;
+            let time = 999;
+            let maxTime = 999;
+            let lastTimeMilliseconds = 0;
+            // 0 = Not compressed, 1 = A little compressed, 2 = Very very compressed like geez
+            let compressed;
+            let digitSelectorXOffset;
+            let boardYOffset;
+
+            // omg a lot of this is spaghetti code, eh, I'll clean it up later probably I suppose
+
+            // Resize the canvas when the window changes size.
+            resize();
+            window.addEventListener('resize', resize);
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                minimumSideLength = Math.min(canvas.width, canvas.height);
+
+                orientationMode = canvas.width > canvas.height ? "horizontal" : "vertical"
+
+                if (orientationMode == "horizontal") {
+                    compressed = canvas.width / canvas.height < 1.5 ? (canvas.width / canvas.height < 1.2 ? 2 : 1) : 0;
+                    minimumSideLength = compressed > 0 ? canvas.width / 3 * 2 : canvas.height;
+                    boardYOffset = compressed == 1 ? (canvas.height - minimumSideLength) / 2 : 0;
+                    console.log(compressed);
+                } else if (orientationMode == "vertical") {
+                    boardYOffset = 0;
+                }
+            }
+
+            // Gets the mouse position at all times
+            let mouseX;
+            let mouseY;
+            document.addEventListener('mousemove', event => {
+                mouseX = event.clientX
+                mouseY = event.clientY
+            });
+
+            // A helper function to randomly shuffle an array! Expected output: A shuffled version of the array
+            function shuffleArray(array) {
+                let outputArray = [];
+                while (array.length > 0) {
+                    let randomIndex = Math.floor(Math.random() * array.length);
+                    outputArray.push(array[randomIndex]);
+                    array.splice(randomIndex, 1);
+                }
+                return outputArray;
+            }
+
+            // A simple helper function to turn x & y cords into an index number. Expected output: An index value from 0 - 80.
+            function cordsToIndex(x, y) {
+                return (x + y * 9);
+            }
+
+            // Another helper function to return a string with a character changed at an index. Expected output: The string with the character at the index.
+            function changeCharAtIndex(string, index, character) {
+                return string.substr(0, index) + character + string.substr(index + 1);
+            }
+
+            // this code is just taken from online. after so long of trying i just gave up.
+            // Of course with modifications to make the function work with a string instead of a 2d array and to return a solved board. A lot of modifications.
+            // Expected output: One solution to the solved board. If there are multiple solutions, both functions will return different ones. If there are none, returns "No solution! :("
+            function solver(board) {
+                for(let index = 0; index < 81; index++){
+
+                    //Need to replace the cell with value if the cell is empty.
+                    if(board.charAt(index) == "0"){
+                        for(let digit = 1; digit < 10; digit++){
+
+                            //Checks with every possible value.
+                            if(validateDigit(board, index, digit.toString())){
+                                board = changeCharAtIndex(board, index, digit);
+                                test = solver(board);
+                                if(test != "No solution! :("){
+                                    return test;
+                                }
+                                board = changeCharAtIndex(board, index, "0");
+                            }
+                        }
+                        return "No solution! :(";
+                    }
+
+                }
+                return board;
+            }
+            function altSolver(board) {
+                for(let index = 0; index < 81; index++){
+                    //Need to replace the cell with value if the cell is empty.
+                    if(board.charAt(index) == "0"){
+                        for(let digit = 9; digit >= 1; digit--){
+                            //Checks with every possible value.
+                            if(validateDigit(board, index, digit.toString())){
+                                board = changeCharAtIndex(board, index, digit);
+                                test = altSolver(board);
+                                if(test != "No solution! :("){
+                                    return test;
+                                }
+                                board = changeCharAtIndex(board, index, "0");
+                            }
+                        }
+                        return "No solution! :(";
+                    }
+
+                }
+                return board;
+            }
+            
+            // This function will validate if a number can be placed in a cell. Expected output: A boolean value
+            function validateDigit(board, index, digit) {
+                let output = true;
+                let x = index % 9;
+                let y = Math.floor(index / 9)
+
+                for (let index = 0; index < 9; index++) {
+                    if (board.charAt(cordsToIndex(x, index)) == digit || board.charAt(cordsToIndex(index, y)) == digit) {
+                        output = false;
+                    }
+                }
+
+                let xSection = Math.floor(x / 3);
+                let ySection = Math.floor(y / 3);
+                for (let columnIndex = 0; columnIndex < 3; columnIndex++) {
+                    for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
+                        if (board.charAt(cordsToIndex(columnIndex + (xSection * 3), rowIndex + (ySection * 3))) == digit) {
+                            output = false;
+                        }
+                    }
+                }
+                
+                return output;
+            }
+
+            // LET'S GO IT ACTUALLY MAKES SOLVABLE BOARDS I NEVER WANT TO LOOK AT THIS CODE AGAIN this took so long
+            // Expected output: A sudoku puzzle with 1 solution with 0 to represent empty spots, & about 25 (usually 20 - 30) filled in spots.
+            function generateBoard() {
+                // Generate a random sudoku board! The actual algorithm is taken from https://stackoverflow.com/questions/6924216/how-to-generate-sudoku-boards-with-unique-solutions in bits & pieces
+                // Hey, if you are reading this code, pls tell me if I could make this algorithm better!
+
+                // This is the initial board. This could also be used on it's own as an initial board, but we're gonna shuffle it while following the sudoku rules!
+                let initialBoard = "123456789456789123789123456231564897564897231897231564312645978645978312978312645";
+
+                // Create a row, column, & digit order to shuffle
+                let temporaryArray = shuffleArray([shuffleArray([0, 1, 2]), shuffleArray([3, 4, 5]), shuffleArray([6, 7, 8])]);
+                let rowOrder = temporaryArray[0].concat(temporaryArray[1].concat(temporaryArray[2]));
+                temporaryArray = shuffleArray([shuffleArray([0, 1, 2]), shuffleArray([3, 4, 5]), shuffleArray([6, 7, 8])]);
+                let columnOrder = temporaryArray[0].concat(temporaryArray[1].concat(temporaryArray[2]));
+                let digitOrder = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+                
+                // Now to assemble the board!
+                let outputBoard = "";
+                for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
+                    for (let columnIndex = 0; columnIndex < 9; columnIndex++) {
+                        outputBoard = outputBoard.concat(digitOrder[Number(initialBoard.charAt(cordsToIndex(columnOrder[columnIndex], rowOrder[rowIndex]))) - 1]);
+                    }
+                }
+
+                
+                
+                // Now time to randomly start popping numbers out! Right now we're gonna make an array of the order of positions we'll remove.
+                let removeNumberList = [];
+                for (let index = 0; index < 81; index++) {
+                    removeNumberList.push(index);
+                }
+                removeNumberList = shuffleArray(removeNumberList);
+
+                // Start to remove the positions, & if the board has multiple solutions, undo the removing.
+                let solutionBoard = outputBoard;
+                
+                for (let index = 0; index < 81; index++) {
+                    outputBoard = changeCharAtIndex(outputBoard, removeNumberList[index], "0");
+
+                    // The solver and alt solver try to find solutions from opposite directions kinda, so if they return the same solution, it's the only solution.
+                    if (solver(outputBoard) != altSolver(outputBoard)) {
+                        //console.log(altSolver(outputBoard))
+                        outputBoard = changeCharAtIndex(outputBoard, removeNumberList[index], solutionBoard.charAt(removeNumberList[index]));
+                    }
+                }
+
+                return outputBoard;
+            }
+
+            // A function to test if the mouse is in a given area. Expected output: A true or false statement.
+            function mouseOverlap(x, y, width, height) {
+                return (mouseX > x && mouseX < x + width && mouseY > y && mouseY < y + height) ? true : false
+                    
+            }
+
+            currentBoard = generateBoard();
+            solutionBoard = solver(currentBoard);
+
+            canvas.addEventListener("click", click)
+
+            // This is where all the code for clicks is! (basically all input)
+            function click(event) {
+                // Selecting a number
+                if (mouseOverlap(minimumSideLength / 11 * 10 + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * 3, minimumSideLength / 11 * 3, minimumSideLength / 11 * 3)) {
+                    let col = Math.floor((mouseX - (minimumSideLength / 11 * 10 + (canvas.width - minimumSideLength / 11 * 13) / 2)) / minimumSideLength * 11)
+                    let row = Math.floor((mouseY - (minimumSideLength / 11 * 3)) / minimumSideLength * 11)
+                    selectedDigit = col % 3 + row * 3 + 1
+
+                // Inputs to the board
+                } else if (mouseOverlap(minimumSideLength / 11, minimumSideLength / 11 + boardYOffset, minimumSideLength / 11 * 9, minimumSideLength / 11 * 9)) {
+                    let index = cordsToIndex(Math.floor((mouseX - minimumSideLength / 11) / (minimumSideLength / 11)), Math.floor((mouseY - minimumSideLength / 11 - boardYOffset) / (minimumSideLength / 11)))
+                    if (currentBoard.charAt(index) == 0) {
+                        console.log(index)
+                        if (selectedDigit == solutionBoard.charAt(index)) {
+                            currentBoard = changeCharAtIndex(currentBoard, index, selectedDigit)
+                        }
+                        else {
+                            time -= 50;
+                        }
+                    }
+                }
+            }
+
+            // This will be where most of the game's code takes place! :D
+            function main(currentTime) {
+
+                
+
+                // Rendering code!
+
+                // Clear the canvas
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Add all of the highlighting on the board!
+                context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                for (let columnIndex = 0; columnIndex < 9; columnIndex++) {
+                    for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
+                        if (mouseX > (columnIndex + 1) * (minimumSideLength / 11) && mouseY > (rowIndex + 1) * (minimumSideLength / 11) + boardYOffset && mouseX < (columnIndex + 2) * (minimumSideLength / 11) && mouseY < (rowIndex + 2) * (minimumSideLength / 11) + boardYOffset) {
+                            context.fillRect((columnIndex + 1) * (minimumSideLength / 11), (rowIndex + 1) * (minimumSideLength / 11) + boardYOffset, (minimumSideLength / 11), (minimumSideLength / 11))
+                        }
+                    }
+                }
+
+                // Drawing the board shape!
+                context.lineCap = "round";
+                context.strokeStyle = boardColor;
+                context.fillStyle = boardColor;
+
+                for (let index = 0; index < 10; index++) {
+                    context.beginPath();
+                    context.lineWidth = index % 3 == 0 ? thickLineWidth : thinLineWidth;
+                    context.moveTo((index + 1) * minimumSideLength / 11, minimumSideLength / 11 + boardYOffset);
+                    context.lineTo((index + 1) * minimumSideLength / 11, minimumSideLength / 11 * 10 + boardYOffset);
+                    context.moveTo(minimumSideLength / 11, (index + 1) * minimumSideLength / 11 + boardYOffset);
+                    context.lineTo(minimumSideLength / 11 * 10, (index + 1) * minimumSideLength / 11 + boardYOffset);
+                    context.stroke();
+                    context.closePath();
+                }
+                
+                // Drawing the numbers on the board!
+                context.textAlign = "center";
+                context.font = (minimumSideLength / 11) * textSizeMultiplier + "px sans-serif";
+                context.textBaseline = "middle";
+                for (let index = 0; index < 81; index++) {
+                    if (currentBoard.charAt(index) == "0") {
+
+                    } else {
+                        context.fillText(currentBoard.charAt(index), ((index % 9) + 1.5) * minimumSideLength / 11, (Math.floor(index / 9) + 1.6) * minimumSideLength / 11 + boardYOffset);
+                    }
+                    
+                }
+
+                time -= (currentTime - lastTimeMilliseconds) / 1000
+                lastTimeMilliseconds = currentTime
+
+                // Drawing the... other stuff.
+                if (orientationMode == "horizontal") {
+
+                    let iconLineWidth = minimumSideLength / 150
+
+                    // The timer
+                    context.beginPath();
+                    context.arc(minimumSideLength * (23/22), minimumSideLength * (3/22), minimumSideLength / 22, 0, Math.PI * 2);
+                    context.arc(minimumSideLength * (23/22), minimumSideLength * (3/22), minimumSideLength / 22 - iconLineWidth, 0, Math.PI * 2, true);
+                    context.fill();
+                    context.closePath();
+
+                    context.lineWidth = iconLineWidth
+                    context.beginPath();
+                    context.moveTo(minimumSideLength * (23/22), minimumSideLength * (3/22));
+                    context.lineTo(minimumSideLength * (23/22) + Math.sin((time / maxTime * Math.PI * 2) + Math.PI) * minimumSideLength / 34, minimumSideLength * (3/22) + Math.cos((time / maxTime * Math.PI * 2) + Math.PI) * minimumSideLength / 34);
+                    context.stroke();
+                    context.closePath();
+                    context.textAlign = "left"
+                    context.fillText(Math.ceil(time), minimumSideLength * (25 / 22), minimumSideLength * (3 / 22));
+
+                    // The menu button
+                    if (canvas.width - minimumSideLength / 5.5 < mouseX && mouseX < canvas.width - minimumSideLength / 11 && minimumSideLength / 11 < mouseY && mouseY < minimumSideLength / 5.5) {
+                        context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                        context.fillRect(canvas.width - minimumSideLength / 5.5 + iconLineWidth / 2, minimumSideLength / 11 + iconLineWidth / 2, minimumSideLength / 11 - iconLineWidth, minimumSideLength / 11 - iconLineWidth);
+                        context.fillStyle = boardColor;
+                    }
+                    context.beginPath();
+                    for (let index = -1; index < 2; index++) {
+                        context.moveTo(canvas.width - minimumSideLength / 11 - minimumSideLength / 22 + minimumSideLength / 50, minimumSideLength / 11 + minimumSideLength / 22 + minimumSideLength * index  / 50);
+                        context.lineTo(canvas.width - minimumSideLength / 11 - minimumSideLength / 22 - minimumSideLength / 50, minimumSideLength / 11 + minimumSideLength / 22 + minimumSideLength * index  / 50);
+                    }
+                    context.stroke();
+                    context.closePath();
+                    context.strokeStyle = "white"
+                    context.strokeRect(canvas.width - minimumSideLength / 5.5 + iconLineWidth / 2, minimumSideLength / 11 + iconLineWidth / 2, minimumSideLength / 11 - iconLineWidth, minimumSideLength / 11 - iconLineWidth)
+
+                    context.textAlign = "center"
+                    context.lineWidth = thickLineWidth;
+
+                    // The number selection
+                    for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
+                        for (let columnIndex = 0; columnIndex < 3; columnIndex++) {
+                            if (mouseOverlap(minimumSideLength / 11 * (10 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3 + rowIndex), minimumSideLength / 11, minimumSideLength / 11)) {
+                                context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                                context.fillRect(minimumSideLength / 11 * (10 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3 + rowIndex), minimumSideLength / 11, minimumSideLength / 11);
+                                context.fillStyle = boardColor;
+                            } else if (selectedDigit - 1 == columnIndex % 3 + rowIndex * 3) {
+                                context.fillStyle = "rgba(255, 255, 255, 0.25)";
+                                context.fillRect(minimumSideLength / 11 * (10 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3 + rowIndex), minimumSideLength / 11, minimumSideLength / 11);
+                                context.fillStyle = boardColor;
+                            }
+                            context.strokeRect(minimumSideLength / 11 * (10 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3 + rowIndex), minimumSideLength / 11, minimumSideLength / 11);
+                            context.fillText(columnIndex % 3 + rowIndex * 3 + 1, minimumSideLength / 11 * (10.5 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3.6 + rowIndex))
+                        }
+                    }
+                }
+
+                requestAnimationFrame(main);
+            }
+            requestAnimationFrame(main);
+            
+        </script>
+    </body>
+</html>

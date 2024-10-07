@@ -18,12 +18,35 @@
             let orientationMode;
             let selectedDigit = 1;
             let boardColor = "rgba(255, 255, 255, 1)"
-            let thickLineWidth = 5;
+            let thickLineWidth = 6;
             let thinLineWidth = 2;
             let textSizeMultiplier = 1;
             let time = 999;
             let maxTime = 999;
             let lastTimeMilliseconds = 0;
+            // 0 = Not compressed, 1 = A little compressed, 2 = Very very compressed like geez the window is practically a square
+            let compressed;
+
+            // These are the variables on where to render stuff.
+            class Element {
+                constructor(x, y, width, height) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = width;
+                    this.height = height;
+                }
+            }
+            let elementUnit;
+            let boardElement = new Element(null, null, null, null);
+            let timerElement = new Element(null, null, null, null);
+            let menuButtonElement = new Element(null, null, null, null);
+            let numberSelectorElement = new Element(null, null, null, null);
+            let hintButtonElement = new Element(null, null, null, null);
+
+            // A secret for later ;)
+            let powerUpSelectorElement = new Element(null, null, null, null);
+
+            // omg a lot of this is spaghetti code, eh, I'll clean it up later probably I suppose
 
             // Resize the canvas when the window changes size.
             resize();
@@ -32,8 +55,207 @@
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
                 minimumSideLength = Math.min(canvas.width, canvas.height);
+
                 orientationMode = canvas.width > canvas.height ? "horizontal" : "vertical"
-                console.log(orientationMode)
+
+                if (orientationMode == "horizontal") {
+                    compressed = canvas.width / canvas.height < 16.5 / 11 ? (canvas.width / canvas.height < 16.5 / 15 ? 2 : 1) : 0;
+                    minimumSideLength = compressed > 0 ? canvas.width / 3 * 2 : canvas.height;
+                    // Most elements on the canvas have an x, y, width, & height of multiples of the element unit. This is for my convenience for coding this.
+                    elementUnit = minimumSideLength / 11;
+                    switch (compressed) {
+                        case 0:
+
+                            boardElement.x = elementUnit;
+                            boardElement.y = elementUnit;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit * 11;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit * 11;
+                            numberSelectorElement.y = elementUnit * 3;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            hintButtonElement.x = elementUnit * 15;
+                            hintButtonElement.y = elementUnit * 3;
+                            hintButtonElement.width = canvas.width - elementUnit * 16;
+                            hintButtonElement.height = elementUnit * 3;
+                            if (hintButtonElement.width < elementUnit) {
+                                hintButtonElement.x = canvas.width - elementUnit * 2;
+                                hintButtonElement.width = elementUnit;
+                            }
+                            
+                            break;
+                        case 1:
+
+                            boardElement.x = elementUnit;
+                            boardElement.y = (canvas.height - elementUnit * 9) / 2;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit * 11;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+                            if (canvas.height / elementUnit > 13) {
+                                timerElement.x = elementUnit
+                                boardElement.y = elementUnit * 3;
+                            }
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit * 11;
+                            numberSelectorElement.y = elementUnit * 3;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            hintButtonElement.x = elementUnit * 14;
+                            hintButtonElement.y = elementUnit * 3;
+                            hintButtonElement.width = canvas.width - elementUnit * 15;
+                            hintButtonElement.height = elementUnit * 3;
+                            break;
+                        case 2:
+                            boardElement.x = elementUnit;
+                            boardElement.y = elementUnit;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit * 11;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit * 11 + (canvas.width - elementUnit * 15) / 2;
+                            numberSelectorElement.y = elementUnit * 3;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            hintButtonElement.x = elementUnit * 11;
+                            hintButtonElement.y = elementUnit * 7;
+                            hintButtonElement.width = canvas.width - elementUnit * 12;
+                            hintButtonElement.height = elementUnit * 3;
+                            break;
+                    }
+                } else if (orientationMode == "vertical") {
+                    compressed = canvas.width / canvas.height > 11 / 18 ? (canvas.width / canvas.height > 15 / 17 ? 2 : 1) : 0;
+                    minimumSideLength = compressed < 2 ? canvas.width : canvas.height / 17 * 11;
+                    if (compressed == 1) {
+                        minimumSideLength = Math.min(canvas.height / 17 * 11, canvas.width)
+                    }
+                    elementUnit = minimumSideLength / 11;
+                    switch (compressed) {
+                        case 0:
+
+                            boardElement.x = elementUnit;
+                            boardElement.y = elementUnit * 3;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit;
+                            numberSelectorElement.y = elementUnit * 13;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            hintButtonElement.x = elementUnit;
+                            hintButtonElement.y = elementUnit * 17;
+                            hintButtonElement.width = elementUnit * 3;
+                            hintButtonElement.height = canvas.height - elementUnit * 18;
+                            if (canvas.width / canvas.height > 11 / 19) {
+                                hintButtonElement.y = elementUnit * 16;
+                                hintButtonElement.height = canvas.height - elementUnit * 17
+                            }
+                            
+                            break;
+                        case 1:
+
+                            boardElement.y = elementUnit * 3;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+                            boardElement.x = (canvas.width - boardElement.width) / 2
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit;
+                            numberSelectorElement.y = canvas.height - elementUnit * 4;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            hintButtonElement.x = elementUnit * 4;
+                            hintButtonElement.y = canvas.height - elementUnit * 4;
+                            hintButtonElement.width = elementUnit * 2;
+                            hintButtonElement.height = elementUnit * 3;
+                            break;
+                        case 2:
+                            boardElement.x = elementUnit;
+                            boardElement.y = elementUnit * 3;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit;
+                            numberSelectorElement.y = elementUnit * 13;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            hintButtonElement.x = elementUnit * 5;
+                            hintButtonElement.y = elementUnit * 13;
+                            hintButtonElement.width = elementUnit * 5;
+                            hintButtonElement.height = elementUnit * 3;
+                            break;
+                    }
+                    console.log(compressed);
+                }
             }
 
             // Gets the mouse position at all times
@@ -202,14 +424,16 @@
             // This is where all the code for clicks is! (basically all input)
             function click(event) {
                 // Selecting a number
-                if (mouseOverlap(minimumSideLength / 11 * 10 + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * 3, minimumSideLength / 11 * 3, minimumSideLength / 11 * 3)) {
-                    let col = Math.floor((mouseX - (minimumSideLength / 11 * 10 + (canvas.width - minimumSideLength / 11 * 13) / 2)) / minimumSideLength * 11)
-                    let row = Math.floor((mouseY - (minimumSideLength / 11 * 3)) / minimumSideLength * 11)
+                if (mouseOverlap(numberSelectorElement.x, numberSelectorElement.y, numberSelectorElement.width, numberSelectorElement.height)) {
+                    let col = Math.floor((mouseX - numberSelectorElement.x) / (numberSelectorElement.width / 3))
+                    let row = Math.floor((mouseY - numberSelectorElement.y) / (numberSelectorElement.height / 3))
                     selectedDigit = col % 3 + row * 3 + 1
-                } else if (mouseOverlap(minimumSideLength / 11, minimumSideLength / 11, minimumSideLength / 11 * 9, minimumSideLength / 11 * 9)) {
-                    let index = cordsToIndex(Math.floor((mouseX - minimumSideLength / 11) / (minimumSideLength / 11)), Math.floor((mouseY - minimumSideLength / 11) / (minimumSideLength / 11)))
+
+                // Inputs to the board
+                } else if (mouseOverlap(boardElement.x, boardElement.y, boardElement.width, boardElement.height)) {
+                    let index = cordsToIndex(Math.floor((mouseX - boardElement.x) / (boardElement.width / 9)), Math.floor((mouseY - boardElement.y) / (boardElement.height / 9)))
                     if (currentBoard.charAt(index) == 0) {
-                        console.log("a")
+                        console.log(index)
                         if (selectedDigit == solutionBoard.charAt(index)) {
                             currentBoard = changeCharAtIndex(currentBoard, index, selectedDigit)
                         }
@@ -234,8 +458,8 @@
                 context.fillStyle = "rgba(255, 255, 255, 0.5)";
                 for (let columnIndex = 0; columnIndex < 9; columnIndex++) {
                     for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
-                        if (mouseX > (columnIndex + 1) * (minimumSideLength / 11) && mouseY > (rowIndex + 1) * (minimumSideLength / 11) && mouseX < (columnIndex + 2) * (minimumSideLength / 11) && mouseY < (rowIndex + 2) * (minimumSideLength / 11)) {
-                            context.fillRect((columnIndex + 1) * (minimumSideLength / 11), (rowIndex + 1) * (minimumSideLength / 11), (minimumSideLength / 11), (minimumSideLength / 11))
+                        if (mouseOverlap(boardElement.x + columnIndex * boardElement.width / 9, boardElement.y + rowIndex * boardElement.height / 9, boardElement.width / 9, boardElement.height / 9)) {
+                            context.fillRect(columnIndex * boardElement.width / 9 + boardElement.x, rowIndex * boardElement.height / 9 + boardElement.y, boardElement.width / 9, boardElement.height / 9)
                         }
                     }
                 }
@@ -248,23 +472,23 @@
                 for (let index = 0; index < 10; index++) {
                     context.beginPath();
                     context.lineWidth = index % 3 == 0 ? thickLineWidth : thinLineWidth;
-                    context.moveTo((index + 1) * minimumSideLength / 11, minimumSideLength / 11);
-                    context.lineTo((index + 1) * minimumSideLength / 11, minimumSideLength / 11 * 10);
-                    context.moveTo(minimumSideLength / 11, (index + 1) * minimumSideLength / 11);
-                    context.lineTo(minimumSideLength / 11 * 10, (index + 1) * minimumSideLength / 11);
+                    context.moveTo(index * (boardElement.width / 9) + boardElement.x, boardElement.y);
+                    context.lineTo(index * (boardElement.width / 9) + boardElement.x, boardElement.y + boardElement.height);
+                    context.moveTo(boardElement.x, index * (boardElement.height / 9) + boardElement.y);
+                    context.lineTo(boardElement.x + boardElement.width, index * (boardElement.height / 9) + boardElement.y);
                     context.stroke();
                     context.closePath();
                 }
                 
                 // Drawing the numbers on the board!
                 context.textAlign = "center";
-                context.font = (minimumSideLength / 11) * textSizeMultiplier + "px sans-serif";
+                context.font = (boardElement.height / 9) * textSizeMultiplier + "px sans-serif";
                 context.textBaseline = "middle";
                 for (let index = 0; index < 81; index++) {
                     if (currentBoard.charAt(index) == "0") {
-
+                        // TO DO: Add notes here later!
                     } else {
-                        context.fillText(currentBoard.charAt(index), ((index % 9) + 1.5) * minimumSideLength / 11, (Math.floor(index / 9) + 1.6) * minimumSideLength / 11);
+                        context.fillText(currentBoard.charAt(index), ((index % 9) + 0.5) * boardElement.width / 9 + boardElement.x, (Math.floor(index / 9) + 0.6) * boardElement.height / 9 + boardElement.y);
                     }
                     
                 }
@@ -273,62 +497,78 @@
                 lastTimeMilliseconds = currentTime
 
                 // Drawing the... other stuff.
-                if (orientationMode == "horizontal") {
+            
+                
 
-                    let iconLineWidth = minimumSideLength / 150
+                // The timer
+                context.beginPath();
+                context.arc(timerElement.x + timerElement.height / 2, timerElement.y + timerElement.height / 2, timerElement.height / 2, 0, Math.PI * 2);
+                if (timerElement.height / 2 - thickLineWidth > 0) {
+                    context.arc(timerElement.x + timerElement.height / 2, timerElement.y + timerElement.height / 2, timerElement.height / 2 - thickLineWidth, 0, Math.PI * 2, true);
+                }
+                context.fill();
+                context.closePath();
 
-                    // The timer
+                context.lineWidth = thickLineWidth
+                context.beginPath();
+                context.moveTo(timerElement.x + timerElement.height / 2, timerElement.y + timerElement.height / 2);
+                context.lineTo(timerElement.x + timerElement.height / 2 + Math.sin((time / maxTime * Math.PI * 2) + Math.PI) * elementUnit / 4, timerElement.y + timerElement.height / 2 + Math.cos((time / maxTime * Math.PI * 2) + Math.PI) * elementUnit / 4);
+                context.stroke();
+                context.closePath();
+                context.textAlign = "left"
+                context.fillText(Math.ceil(time), timerElement.x + timerElement.height * 1.4, timerElement.y + timerElement.height * 0.6);
+
+                // The menu button
+                if (mouseOverlap(menuButtonElement.x, menuButtonElement.y, menuButtonElement.width, menuButtonElement.y)) {
+                    context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                    context.fillRect(menuButtonElement.x, menuButtonElement.y, menuButtonElement.width, menuButtonElement.y);
+                    context.fillStyle = boardColor;
+                }
+                context.beginPath();
+                for (let index = -1; index < 2; index++) {
+                    context.moveTo(menuButtonElement.x + menuButtonElement.width * 0.25, menuButtonElement.y + menuButtonElement.height / 2 + menuButtonElement.height * index  * 0.2);
+                    context.lineTo(menuButtonElement.x + menuButtonElement.width * 0.75, menuButtonElement.y + menuButtonElement.height / 2 + menuButtonElement.height * index  * 0.2);
+                }
+                context.stroke();
+                context.closePath();
+                context.strokeStyle = "white"
+                context.strokeRect(menuButtonElement.x + thickLineWidth / 2, menuButtonElement.y + thickLineWidth / 2, menuButtonElement.width - thickLineWidth, menuButtonElement.height - thickLineWidth)
+
+                context.textAlign = "center"
+                context.lineWidth = thickLineWidth;
+
+                // The number selection
+                for (let index = 0; index < 4; index++) {
                     context.beginPath();
-                    context.arc(minimumSideLength * (23/22), minimumSideLength * (3/22), minimumSideLength / 22, 0, Math.PI * 2);
-                    context.arc(minimumSideLength * (23/22), minimumSideLength * (3/22), minimumSideLength / 22 - iconLineWidth, 0, Math.PI * 2, true);
-                    context.fill();
-                    context.closePath();
-
-                    context.lineWidth = iconLineWidth
-                    context.beginPath();
-                    context.moveTo(minimumSideLength * (23/22), minimumSideLength * (3/22));
-                    context.lineTo(minimumSideLength * (23/22) + Math.sin((time / maxTime * Math.PI * 2) + Math.PI) * minimumSideLength / 34, minimumSideLength * (3/22) + Math.cos((time / maxTime * Math.PI * 2) + Math.PI) * minimumSideLength / 34);
+                    context.lineWidth = index % 3 == 0 ? thickLineWidth : thinLineWidth;
+                    context.moveTo(index * (numberSelectorElement.width / 3) + numberSelectorElement.x, numberSelectorElement.y);
+                    context.lineTo(index * (numberSelectorElement.width / 3) + numberSelectorElement.x, numberSelectorElement.y + numberSelectorElement.height);
+                    context.moveTo(numberSelectorElement.x, index * (numberSelectorElement.height / 3) + numberSelectorElement.y);
+                    context.lineTo(numberSelectorElement.x + numberSelectorElement.width, index * (numberSelectorElement.height / 3) + numberSelectorElement.y);
                     context.stroke();
                     context.closePath();
-                    context.textAlign = "left"
-                    context.fillText(Math.ceil(time), minimumSideLength * (25 / 22), minimumSideLength * (3 / 22));
-
-                    // The menu button
-                    if (canvas.width - minimumSideLength / 5.5 < mouseX && mouseX < canvas.width - minimumSideLength / 11 && minimumSideLength / 11 < mouseY && mouseY < minimumSideLength / 5.5) {
+                }
+                for (let digitIndex = 0; digitIndex < 9; digitIndex++) {
+                    if (mouseOverlap(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3)) {
                         context.fillStyle = "rgba(255, 255, 255, 0.5)";
-                        context.fillRect(canvas.width - minimumSideLength / 5.5 + iconLineWidth / 2, minimumSideLength / 11 + iconLineWidth / 2, minimumSideLength / 11 - iconLineWidth, minimumSideLength / 11 - iconLineWidth);
+                        context.fillRect(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3);
+                        context.fillStyle = boardColor;
+                    } else if (selectedDigit == digitIndex + 1) {
+                        context.fillStyle = "rgba(255, 255, 255, 0.25)";
+                        context.fillRect(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3);
                         context.fillStyle = boardColor;
                     }
-                    context.beginPath();
-                    for (let index = -1; index < 2; index++) {
-                        context.moveTo(canvas.width - minimumSideLength / 11 - minimumSideLength / 22 + minimumSideLength / 50, minimumSideLength / 11 + minimumSideLength / 22 + minimumSideLength * index  / 50);
-                        context.lineTo(canvas.width - minimumSideLength / 11 - minimumSideLength / 22 - minimumSideLength / 50, minimumSideLength / 11 + minimumSideLength / 22 + minimumSideLength * index  / 50);
-                    }
-                    context.stroke();
-                    context.closePath();
-                    context.strokeStyle = "white"
-                    context.strokeRect(canvas.width - minimumSideLength / 5.5 + iconLineWidth / 2, minimumSideLength / 11 + iconLineWidth / 2, minimumSideLength / 11 - iconLineWidth, minimumSideLength / 11 - iconLineWidth)
-
-                    context.textAlign = "center"
-                    context.lineWidth = thickLineWidth;
-
-                    // The number selection
-                    for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
-                        for (let columnIndex = 0; columnIndex < 3; columnIndex++) {
-                            if (mouseOverlap(minimumSideLength / 11 * (10 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3 + rowIndex), minimumSideLength / 11, minimumSideLength / 11)) {
-                                context.fillStyle = "rgba(255, 255, 255, 0.5)";
-                                context.fillRect(minimumSideLength / 11 * (10 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3 + rowIndex), minimumSideLength / 11, minimumSideLength / 11);
-                                context.fillStyle = boardColor;
-                            } else if (selectedDigit - 1 == columnIndex % 3 + rowIndex * 3) {
-                                context.fillStyle = "rgba(255, 255, 255, 0.25)";
-                                context.fillRect(minimumSideLength / 11 * (10 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3 + rowIndex), minimumSideLength / 11, minimumSideLength / 11);
-                                context.fillStyle = boardColor;
-                            }
-                            context.strokeRect(minimumSideLength / 11 * (10 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3 + rowIndex), minimumSideLength / 11, minimumSideLength / 11);
-                            context.fillText(columnIndex % 3 + rowIndex * 3 + 1, minimumSideLength / 11 * (10.5 + columnIndex) + (canvas.width - minimumSideLength / 11 * 13) / 2, minimumSideLength / 11 * (3.6 + rowIndex))
-                        }
-                    }
+                    context.fillText(digitIndex + 1, numberSelectorElement.x + (digitIndex % 3 + 0.5) * numberSelectorElement.width / 3, numberSelectorElement.y + ((digitIndex - digitIndex % 3) / 3 + 0.6) * numberSelectorElement.height / 3)
                 }
+
+                // The hint button (the button doesn't do anything yet :()
+                if (mouseOverlap(hintButtonElement.x, hintButtonElement.y, hintButtonElement.width, hintButtonElement.height)) {
+                    context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                    context.fillRect(hintButtonElement.x, hintButtonElement.y, hintButtonElement.width, hintButtonElement.height);
+                    context.fillStyle = boardColor;
+                }
+                context.strokeRect(hintButtonElement.x, hintButtonElement.y, hintButtonElement.width, hintButtonElement.height);
+                
 
                 requestAnimationFrame(main);
             }

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            Sudoku!
+        </title>
+        <meta name="viewport" content="width=device-width; initial-scale=1; maximum-scale=1; user-scalable=0;"/>
+    </head>
+    <body style="overflow: hidden; margin: 0px">
+        <canvas style="background-color:black;" id="canvas"></canvas>
+        
+        <script>
+            // Get the HTML Canvas element!
+            let canvas = document.getElementById("canvas");
+            let context = canvas.getContext("2d");
+
+            // Initializes the Game Variables
+            let minimumSideLength;
+            let orientationMode;
+            let selectedDigit = 1;
+            let boardColor = "rgba(255, 255, 255, 1)"
+            let thickLineWidth = 6;
+            let thinLineWidth = 2;
+            let textSizeMultiplier = 1;
+            let time = 999;
+            let maxTime = 999;
+            let lastTimeMilliseconds = 0;
+            // 0 = Not compressed, 1 = A little compressed, 2 = Very very compressed like geez the window is practically a square
+            let compressed;
+
+            // These are the variables on where to render stuff.
+            class Element {
+                constructor(x, y, width, height) {
+                    this.x = x;
+                    this.y = y;
+                    this.width = width;
+                    this.height = height;
+                }
+            }
+            let elementUnit;
+            let boardElement = new Element(null, null, null, null);
+            let timerElement = new Element(null, null, null, null);
+            let menuButtonElement = new Element(null, null, null, null);
+            let numberSelectorElement = new Element(null, null, null, null);
+            let noteButtonElement = new Element(null, null, null, null);
+
+            // A secret for later ;)
+            let powerUpSelectorElement = new Element(null, null, null, null);
+
+            // omg a lot of this is spaghetti code, eh, I'll clean it up later probably I suppose
+
+            // Resize the canvas when the window changes size.
+            resize();
+            window.addEventListener('resize', resize);
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                minimumSideLength = Math.min(canvas.width, canvas.height);
+
+                orientationMode = canvas.width > canvas.height ? "horizontal" : "vertical"
+
+                if (orientationMode == "horizontal") {
+                    compressed = canvas.width / canvas.height < 16.5 / 11 ? (canvas.width / canvas.height < 16.5 / 15 ? 2 : 1) : 0;
+                    minimumSideLength = compressed > 0 ? canvas.width / 3 * 2 : canvas.height;
+                    // Most elements on the canvas have an x, y, width, & height of multiples of the element unit. This is for my convenience for coding this.
+                    elementUnit = minimumSideLength / 11;
+                    switch (compressed) {
+                        case 0:
+
+                            boardElement.x = elementUnit;
+                            boardElement.y = elementUnit;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit * 11;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit * 11;
+                            numberSelectorElement.y = elementUnit * 3;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            noteButtonElement.x = elementUnit * 15;
+                            noteButtonElement.y = elementUnit * 3;
+                            noteButtonElement.width = canvas.width - elementUnit * 16;
+                            noteButtonElement.height = elementUnit * 3;
+                            if (noteButtonElement.width < elementUnit) {
+                                noteButtonElement.x = canvas.width - elementUnit * 2;
+                                noteButtonElement.width = elementUnit;
+                            }
+                            
+                            break;
+                        case 1:
+
+                            boardElement.x = elementUnit;
+                            boardElement.y = (canvas.height - elementUnit * 9) / 2;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit * 11;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+                            if (canvas.height / elementUnit > 13) {
+                                timerElement.x = elementUnit
+                                boardElement.y = elementUnit * 3;
+                            }
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit * 11;
+                            numberSelectorElement.y = elementUnit * 3;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            noteButtonElement.x = elementUnit * 14;
+                            noteButtonElement.y = elementUnit * 3;
+                            noteButtonElement.width = canvas.width - elementUnit * 15;
+                            noteButtonElement.height = elementUnit * 3;
+                            break;
+                        case 2:
+                            boardElement.x = elementUnit;
+                            boardElement.y = elementUnit;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit * 11;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit * 11 + (canvas.width - elementUnit * 15) / 2;
+                            numberSelectorElement.y = elementUnit * 3;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            noteButtonElement.x = elementUnit * 11;
+                            noteButtonElement.y = elementUnit * 7;
+                            noteButtonElement.width = canvas.width - elementUnit * 12;
+                            noteButtonElement.height = elementUnit * 3;
+                            break;
+                    }
+                } else if (orientationMode == "vertical") {
+                    compressed = canvas.width / canvas.height > 11 / 18 ? (canvas.width / canvas.height > 15 / 17 ? 2 : 1) : 0;
+                    minimumSideLength = compressed < 2 ? canvas.width : canvas.height / 17 * 11;
+                    if (compressed == 1) {
+                        minimumSideLength = Math.min(canvas.height / 17 * 11, canvas.width)
+                    }
+                    elementUnit = minimumSideLength / 11;
+                    switch (compressed) {
+                        case 0:
+
+                            boardElement.x = elementUnit;
+                            boardElement.y = elementUnit * 3;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit;
+                            numberSelectorElement.y = elementUnit * 13;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            noteButtonElement.x = elementUnit;
+                            noteButtonElement.y = elementUnit * 17;
+                            noteButtonElement.width = elementUnit * 3;
+                            noteButtonElement.height = canvas.height - elementUnit * 18;
+                            if (canvas.width / canvas.height > 11 / 19) {
+                                noteButtonElement.y = elementUnit * 16;
+                                noteButtonElement.height = canvas.height - elementUnit * 17
+                            }
+                            
+                            break;
+                        case 1:
+
+                            boardElement.y = elementUnit * 3;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+                            boardElement.x = (canvas.width - boardElement.width) / 2
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit;
+                            numberSelectorElement.y = canvas.height - elementUnit * 4;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            noteButtonElement.x = elementUnit * 4;
+                            noteButtonElement.y = canvas.height - elementUnit * 4;
+                            noteButtonElement.width = elementUnit * 2;
+                            noteButtonElement.height = elementUnit * 3;
+                            break;
+                        case 2:
+                            boardElement.x = elementUnit;
+                            boardElement.y = elementUnit * 3;
+                            boardElement.width = elementUnit * 9;
+                            boardElement.height = elementUnit * 9;
+
+                            // These values are for the clock icon itself, the actual timer is always a bit to the right.
+                            // Height is used as the size and the width value goes unused.
+                            timerElement.x = elementUnit;
+                            timerElement.y = elementUnit;
+                            timerElement.height = elementUnit;
+
+                            menuButtonElement.x = canvas.width - elementUnit * 2;
+                            menuButtonElement.y = elementUnit;
+                            menuButtonElement.width = elementUnit;
+                            menuButtonElement.height = elementUnit
+
+                            numberSelectorElement.x = elementUnit;
+                            numberSelectorElement.y = elementUnit * 13;
+                            numberSelectorElement.width = elementUnit * 3;
+                            numberSelectorElement.height = elementUnit * 3;
+
+                            noteButtonElement.x = elementUnit * 5;
+                            noteButtonElement.y = elementUnit * 13;
+                            noteButtonElement.width = elementUnit * 5;
+                            noteButtonElement.height = elementUnit * 3;
+                            break;
+                    }
+                    console.log(compressed);
+                }
+            }
+
+            // Gets the mouse position at all times
+            let mouseX;
+            let mouseY;
+            document.addEventListener('mousemove', event => {
+                mouseX = event.clientX
+                mouseY = event.clientY
+            });
+
+            // A helper function to randomly shuffle an array! Expected output: A shuffled version of the array
+            function shuffleArray(array) {
+                let outputArray = [];
+                while (array.length > 0) {
+                    let randomIndex = Math.floor(Math.random() * array.length);
+                    outputArray.push(array[randomIndex]);
+                    array.splice(randomIndex, 1);
+                }
+                return outputArray;
+            }
+
+            // A simple helper function to turn x & y cords into an index number. Expected output: An index value from 0 - 80.
+            function cordsToIndex(x, y) {
+                return (x + y * 9);
+            }
+
+            // Another helper function to return a string with a character changed at an index. Expected output: The string with the character at the index.
+            function changeCharAtIndex(string, index, character) {
+                return string.substr(0, index) + character + string.substr(index + 1);
+            }
+
+            // this code is just taken from online. after so long of trying i just gave up.
+            // Of course with modifications to make the function work with a string instead of a 2d array and to return a solved board. A lot of modifications.
+            // Expected output: One solution to the solved board. If there are multiple solutions, both functions will return different ones. If there are none, returns "No solution! :("
+            function solver(board) {
+                for(let index = 0; index < 81; index++){
+
+                    //Need to replace the cell with value if the cell is empty.
+                    if(board.charAt(index) == "0"){
+                        for(let digit = 1; digit < 10; digit++){
+
+                            //Checks with every possible value.
+                            if(validateDigit(board, index, digit.toString())){
+                                board = changeCharAtIndex(board, index, digit);
+                                test = solver(board);
+                                if(test != "No solution! :("){
+                                    return test;
+                                }
+                                board = changeCharAtIndex(board, index, "0");
+                            }
+                        }
+                        return "No solution! :(";
+                    }
+
+                }
+                return board;
+            }
+            function altSolver(board) {
+                for(let index = 0; index < 81; index++){
+                    //Need to replace the cell with value if the cell is empty.
+                    if(board.charAt(index) == "0"){
+                        for(let digit = 9; digit >= 1; digit--){
+                            //Checks with every possible value.
+                            if(validateDigit(board, index, digit.toString())){
+                                board = changeCharAtIndex(board, index, digit);
+                                test = altSolver(board);
+                                if(test != "No solution! :("){
+                                    return test;
+                                }
+                                board = changeCharAtIndex(board, index, "0");
+                            }
+                        }
+                        return "No solution! :(";
+                    }
+
+                }
+                return board;
+            }
+            
+            // This function will validate if a number can be placed in a cell. Expected output: A boolean value
+            function validateDigit(board, index, digit) {
+                let output = true;
+                let x = index % 9;
+                let y = Math.floor(index / 9)
+
+                for (let index = 0; index < 9; index++) {
+                    if (board.charAt(cordsToIndex(x, index)) == digit || board.charAt(cordsToIndex(index, y)) == digit) {
+                        output = false;
+                    }
+                }
+
+                let xSection = Math.floor(x / 3);
+                let ySection = Math.floor(y / 3);
+                for (let columnIndex = 0; columnIndex < 3; columnIndex++) {
+                    for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
+                        if (board.charAt(cordsToIndex(columnIndex + (xSection * 3), rowIndex + (ySection * 3))) == digit) {
+                            output = false;
+                        }
+                    }
+                }
+                
+                return output;
+            }
+
+            // LET'S GO IT ACTUALLY MAKES SOLVABLE BOARDS I NEVER WANT TO LOOK AT THIS CODE AGAIN this took so long
+            // Expected output: A sudoku puzzle with 1 solution with 0 to represent empty spots, & about 25 (usually 20 - 30) filled in spots.
+            function generateBoard() {
+                // Generate a random sudoku board! The actual algorithm is taken from https://stackoverflow.com/questions/6924216/how-to-generate-sudoku-boards-with-unique-solutions in bits & pieces
+                // Hey, if you are reading this code, pls tell me if I could make this algorithm better!
+
+                // This is the initial board. This could also be used on it's own as an initial board, but we're gonna shuffle it while following the sudoku rules!
+                let initialBoard = "123456789456789123789123456231564897564897231897231564312645978645978312978312645";
+
+                // Create a row, column, & digit order to shuffle
+                let temporaryArray = shuffleArray([shuffleArray([0, 1, 2]), shuffleArray([3, 4, 5]), shuffleArray([6, 7, 8])]);
+                let rowOrder = temporaryArray[0].concat(temporaryArray[1].concat(temporaryArray[2]));
+                temporaryArray = shuffleArray([shuffleArray([0, 1, 2]), shuffleArray([3, 4, 5]), shuffleArray([6, 7, 8])]);
+                let columnOrder = temporaryArray[0].concat(temporaryArray[1].concat(temporaryArray[2]));
+                let digitOrder = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+                
+                // Now to assemble the board!
+                let outputBoard = "";
+                for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
+                    for (let columnIndex = 0; columnIndex < 9; columnIndex++) {
+                        outputBoard = outputBoard.concat(digitOrder[Number(initialBoard.charAt(cordsToIndex(columnOrder[columnIndex], rowOrder[rowIndex]))) - 1]);
+                    }
+                }
+
+                
+                
+                // Now time to randomly start popping numbers out! Right now we're gonna make an array of the order of positions we'll remove.
+                let removeNumberList = [];
+                for (let index = 0; index < 81; index++) {
+                    removeNumberList.push(index);
+                }
+                removeNumberList = shuffleArray(removeNumberList);
+
+                // Start to remove the positions, & if the board has multiple solutions, undo the removing.
+                let solutionBoard = outputBoard;
+                
+                for (let index = 0; index < 81; index++) {
+                    outputBoard = changeCharAtIndex(outputBoard, removeNumberList[index], "0");
+
+                    // The solver and alt solver try to find solutions from opposite directions kinda, so if they return the same solution, it's the only solution.
+                    if (solver(outputBoard) != altSolver(outputBoard)) {
+                        //console.log(altSolver(outputBoard))
+                        outputBoard = changeCharAtIndex(outputBoard, removeNumberList[index], solutionBoard.charAt(removeNumberList[index]));
+                    }
+                }
+
+                return outputBoard;
+            }
+
+            // A function to test if the mouse is in a given area. Expected output: A true or false statement.
+            function mouseOverlap(x, y, width, height) {
+                return (mouseX > x && mouseX < x + width && mouseY > y && mouseY < y + height) ? true : false
+                    
+            }
+
+            currentBoard = generateBoard();
+            solutionBoard = solver(currentBoard);
+
+            canvas.addEventListener("click", click)
+
+            // This is where all the code for clicks is! (basically all input)
+            function click(event) {
+                // Selecting a number
+                if (mouseOverlap(numberSelectorElement.x, numberSelectorElement.y, numberSelectorElement.width, numberSelectorElement.height)) {
+                    let col = Math.floor((mouseX - numberSelectorElement.x) / (numberSelectorElement.width / 3))
+                    let row = Math.floor((mouseY - numberSelectorElement.y) / (numberSelectorElement.height / 3))
+                    selectedDigit = col % 3 + row * 3 + 1
+
+                // Inputs to the board
+                } else if (mouseOverlap(boardElement.x, boardElement.y, boardElement.width, boardElement.height)) {
+                    let index = cordsToIndex(Math.floor((mouseX - boardElement.x) / (boardElement.width / 9)), Math.floor((mouseY - boardElement.y) / (boardElement.height / 9)))
+                    if (currentBoard.charAt(index) == 0) {
+                        console.log(index)
+                        if (selectedDigit == solutionBoard.charAt(index)) {
+                            currentBoard = changeCharAtIndex(currentBoard, index, selectedDigit)
+                        }
+                        else {
+                            time -= 50;
+                        }
+                    }
+                }
+            }
+
+            // This will be where most of the game's code takes place! :D
+            function main(currentTime) {
+
+                
+
+                // Rendering code!
+
+                // Clear the canvas
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Add all of the highlighting on the board!
+                context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                for (let columnIndex = 0; columnIndex < 9; columnIndex++) {
+                    for (let rowIndex = 0; rowIndex < 9; rowIndex++) {
+                        if (mouseOverlap(boardElement.x + columnIndex * boardElement.width / 9, boardElement.y + rowIndex * boardElement.height / 9, boardElement.width / 9, boardElement.height / 9)) {
+                            context.fillRect(columnIndex * boardElement.width / 9 + boardElement.x, rowIndex * boardElement.height / 9 + boardElement.y, boardElement.width / 9, boardElement.height / 9)
+                        }
+                    }
+                }
+
+                // Drawing the board shape!
+                context.lineCap = "round";
+                context.strokeStyle = boardColor;
+                context.fillStyle = boardColor;
+
+                for (let index = 0; index < 10; index++) {
+                    context.beginPath();
+                    context.lineWidth = index % 3 == 0 ? thickLineWidth : thinLineWidth;
+                    context.moveTo(index * (boardElement.width / 9) + boardElement.x, boardElement.y);
+                    context.lineTo(index * (boardElement.width / 9) + boardElement.x, boardElement.y + boardElement.height);
+                    context.moveTo(boardElement.x, index * (boardElement.height / 9) + boardElement.y);
+                    context.lineTo(boardElement.x + boardElement.width, index * (boardElement.height / 9) + boardElement.y);
+                    context.stroke();
+                    context.closePath();
+                }
+                
+                // Drawing the numbers on the board!
+                context.textAlign = "center";
+                context.font = (boardElement.height / 9) * textSizeMultiplier + "px sans-serif";
+                context.textBaseline = "middle";
+                for (let index = 0; index < 81; index++) {
+                    if (currentBoard.charAt(index) == "0") {
+                        // TO DO: Add notes here later!
+                    } else {
+                        context.fillText(currentBoard.charAt(index), ((index % 9) + 0.5) * boardElement.width / 9 + boardElement.x, (Math.floor(index / 9) + 0.6) * boardElement.height / 9 + boardElement.y);
+                    }
+                    
+                }
+
+                time -= (currentTime - lastTimeMilliseconds) / 1000
+                lastTimeMilliseconds = currentTime
+
+                // Drawing the... other stuff.
+            
+                
+
+                // The timer
+                context.beginPath();
+                context.arc(timerElement.x + timerElement.height / 2, timerElement.y + timerElement.height / 2, timerElement.height / 2, 0, Math.PI * 2);
+                if (timerElement.height / 2 - thickLineWidth > 0) {
+                    context.arc(timerElement.x + timerElement.height / 2, timerElement.y + timerElement.height / 2, timerElement.height / 2 - thickLineWidth, 0, Math.PI * 2, true);
+                }
+                context.fill();
+                context.closePath();
+
+                context.lineWidth = thickLineWidth
+                context.beginPath();
+                context.moveTo(timerElement.x + timerElement.height / 2, timerElement.y + timerElement.height / 2);
+                context.lineTo(timerElement.x + timerElement.height / 2 + Math.sin((time / maxTime * Math.PI * 2) + Math.PI) * elementUnit / 4, timerElement.y + timerElement.height / 2 + Math.cos((time / maxTime * Math.PI * 2) + Math.PI) * elementUnit / 4);
+                context.stroke();
+                context.closePath();
+                context.textAlign = "left"
+                context.fillText(Math.ceil(time), timerElement.x + timerElement.height * 1.4, timerElement.y + timerElement.height * 0.6);
+
+                // The menu button
+                if (mouseOverlap(menuButtonElement.x, menuButtonElement.y, menuButtonElement.width, menuButtonElement.y)) {
+                    context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                    context.fillRect(menuButtonElement.x, menuButtonElement.y, menuButtonElement.width, menuButtonElement.y);
+                    context.fillStyle = boardColor;
+                }
+                context.beginPath();
+                for (let index = -1; index < 2; index++) {
+                    context.moveTo(menuButtonElement.x + menuButtonElement.width * 0.25, menuButtonElement.y + menuButtonElement.height / 2 + menuButtonElement.height * index  * 0.2);
+                    context.lineTo(menuButtonElement.x + menuButtonElement.width * 0.75, menuButtonElement.y + menuButtonElement.height / 2 + menuButtonElement.height * index  * 0.2);
+                }
+                context.stroke();
+                context.closePath();
+                context.strokeStyle = "white"
+                context.strokeRect(menuButtonElement.x + thickLineWidth / 2, menuButtonElement.y + thickLineWidth / 2, menuButtonElement.width - thickLineWidth, menuButtonElement.height - thickLineWidth)
+
+                context.textAlign = "center"
+                context.lineWidth = thickLineWidth;
+
+                // The number selection
+                for (let index = 0; index < 4; index++) {
+                    context.beginPath();
+                    context.lineWidth = index % 3 == 0 ? thickLineWidth : thinLineWidth;
+                    context.moveTo(index * (numberSelectorElement.width / 3) + numberSelectorElement.x, numberSelectorElement.y);
+                    context.lineTo(index * (numberSelectorElement.width / 3) + numberSelectorElement.x, numberSelectorElement.y + numberSelectorElement.height);
+                    context.moveTo(numberSelectorElement.x, index * (numberSelectorElement.height / 3) + numberSelectorElement.y);
+                    context.lineTo(numberSelectorElement.x + numberSelectorElement.width, index * (numberSelectorElement.height / 3) + numberSelectorElement.y);
+                    context.stroke();
+                    context.closePath();
+                }
+                for (let digitIndex = 0; digitIndex < 9; digitIndex++) {
+                    if (mouseOverlap(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3)) {
+                        context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                        context.fillRect(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3);
+                        context.fillStyle = boardColor;
+                    } else if (selectedDigit == digitIndex + 1) {
+                        context.fillStyle = "rgba(255, 255, 255, 0.25)";
+                        context.fillRect(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3);
+                        context.fillStyle = boardColor;
+                    }
+                    context.fillText(digitIndex + 1, numberSelectorElement.x + (digitIndex % 3 + 0.5) * numberSelectorElement.width / 3, numberSelectorElement.y + ((digitIndex - digitIndex % 3) / 3 + 0.6) * numberSelectorElement.height / 3)
+                }
+
+                // The hint button (the button doesn't do anything yet :()
+                if (mouseOverlap(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height)) {
+                    context.fillStyle = "rgba(255, 255, 255, 0.5)";
+                    context.fillRect(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height);
+                    context.fillStyle = boardColor;
+                }
+                context.strokeRect(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height);
+                
+
+                requestAnimationFrame(main);
+            }
+            requestAnimationFrame(main);
+            
+        </script>
+    </body>
+</html>

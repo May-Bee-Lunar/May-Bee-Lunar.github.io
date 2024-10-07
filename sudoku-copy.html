@@ -424,6 +424,8 @@
 
             // This is where all the code for clicks is! (basically all input)
             function click(event) {
+                // Maybe all the mobile version needs is to call this function every once in a while?
+                resize();
                 // Selecting a number
                 if (mouseOverlap(numberSelectorElement.x, numberSelectorElement.y, numberSelectorElement.width, numberSelectorElement.height)) {
                     let col = Math.floor((mouseX - numberSelectorElement.x) / (numberSelectorElement.width / 3))

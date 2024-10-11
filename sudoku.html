@@ -4,6 +4,7 @@
         <title>
             Sudoku!
         </title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=0"/>
     </head>
     <body style="overflow: hidden; margin: 0px">
         <canvas style="background-color:black;" id="canvas"></canvas>
@@ -254,7 +255,6 @@
                             noteButtonElement.height = elementUnit * 3;
                             break;
                     }
-                    console.log(compressed);
                 }
             }
 
@@ -337,13 +337,12 @@
             
             // This function will validate if a number can be placed in a cell. Expected output: A boolean value
             function validateDigit(board, index, digit) {
-                let output = true;
                 let x = index % 9;
                 let y = Math.floor(index / 9)
 
                 for (let index = 0; index < 9; index++) {
                     if (board.charAt(cordsToIndex(x, index)) == digit || board.charAt(cordsToIndex(index, y)) == digit) {
-                        output = false;
+                        return false;
                     }
                 }
 
@@ -352,12 +351,12 @@
                 for (let columnIndex = 0; columnIndex < 3; columnIndex++) {
                     for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
                         if (board.charAt(cordsToIndex(columnIndex + (xSection * 3), rowIndex + (ySection * 3))) == digit) {
-                            output = false;
+                            return false;
                         }
                     }
                 }
                 
-                return output;
+                return true;
             }
 
             // LET'S GO IT ACTUALLY MAKES SOLVABLE BOARDS I NEVER WANT TO LOOK AT THIS CODE AGAIN this took so long
@@ -368,13 +367,31 @@
 
                 // This is the initial board. This could also be used on it's own as an initial board, but we're gonna shuffle it while following the sudoku rules!
                 let initialBoard = "123456789456789123789123456231564897564897231897231564312645978645978312978312645";
+                // hm this isn't good enough (every 1x3 row/column with the same digits has... the same digits) lemme try to randomly make the initial board.
+                initialBoard = "000000000000000000000000000000000000000000000000000000000000000000000000123456789"
+                
+                for (let index = 0; index < 72; index++) {
+                    let digitOrder = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9])
 
+                    for (let digitIndex = 0; digitIndex < 9; digitIndex++) {
+                        if (initialBoard.charAt(index) == "0") {
+                            if (validateDigit(initialBoard, index, digitOrder[digitIndex])) {
+                                initialBoard = changeCharAtIndex(initialBoard, index, digitOrder[digitIndex]);
+                                if (solver(initialBoard) == "No solution! :(") {
+                                    initialBoard = changeCharAtIndex(initialBoard, index, "0");
+                                }
+                            }
+                        }
+                    }
+                }
+
+                
                 // Create a row, column, & digit order to shuffle
                 let temporaryArray = shuffleArray([shuffleArray([0, 1, 2]), shuffleArray([3, 4, 5]), shuffleArray([6, 7, 8])]);
                 let rowOrder = temporaryArray[0].concat(temporaryArray[1].concat(temporaryArray[2]));
                 temporaryArray = shuffleArray([shuffleArray([0, 1, 2]), shuffleArray([3, 4, 5]), shuffleArray([6, 7, 8])]);
                 let columnOrder = temporaryArray[0].concat(temporaryArray[1].concat(temporaryArray[2]));
-                let digitOrder = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+                digitOrder = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
                 
                 // Now to assemble the board!
@@ -384,7 +401,6 @@
                         outputBoard = outputBoard.concat(digitOrder[Number(initialBoard.charAt(cordsToIndex(columnOrder[columnIndex], rowOrder[rowIndex]))) - 1]);
                     }
                 }
-
                 
                 
                 // Now time to randomly start popping numbers out! Right now we're gonna make an array of the order of positions we'll remove.
@@ -423,6 +439,8 @@
 
             // This is where all the code for clicks is! (basically all input)
             function click(event) {
+                // Maybe all the mobile version needs is to call this function every once in a while?
+                resize();
                 // Selecting a number
                 if (mouseOverlap(numberSelectorElement.x, numberSelectorElement.y, numberSelectorElement.width, numberSelectorElement.height)) {
                     let col = Math.floor((mouseX - numberSelectorElement.x) / (numberSelectorElement.width / 3))
@@ -433,7 +451,6 @@
                 } else if (mouseOverlap(boardElement.x, boardElement.y, boardElement.width, boardElement.height)) {
                     let index = cordsToIndex(Math.floor((mouseX - boardElement.x) / (boardElement.width / 9)), Math.floor((mouseY - boardElement.y) / (boardElement.height / 9)))
                     if (currentBoard.charAt(index) == 0) {
-                        console.log(index)
                         if (selectedDigit == solutionBoard.charAt(index)) {
                             currentBoard = changeCharAtIndex(currentBoard, index, selectedDigit)
                         }

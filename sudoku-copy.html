@@ -18,7 +18,6 @@
         <canvas style="background-color:rgba(0, 0, 0, 0);" id="game"></canvas>
         <canvas style="background-color:rgba(0, 0, 0, 0);" id="menu"></canvas>
         
-        <script src="generateBoard.js" async></script>
         <script>
 
             // Get the HTML Canvas element!
@@ -42,10 +41,11 @@
             let lastTimeMilliseconds = 0;
             let blurRadius = 4;
             let currentBoard = null;
+            let generatingBoard = false;
             // 0 = Not compressed, 1 = A little compressed, 2 = Very very compressed like geez the window is practically a square
             let compressed;
 
-            // States: play, title, pause, loading
+            // States: play, title, pause
             let gameState = "title";
 
             // These are the variables on where to render stuff.
@@ -535,26 +535,14 @@
                                         }
                                         break;
                                     case 1:
-                                        gameState = "loading"
-                                        menuContext.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
-
-                                        // A super cool loading screen!
-                                        menuContext.font = menuCanvas.height / 6 + "px sans-serif"
-                                        menuContext.fillText("Loading!", menuCanvas.width / 2, menuCanvas.height / 2, menuCanvas.width);
-                                        menuContext.font = menuCanvas.height / 12 + "px sans-serif"
-                                        menuContext.fillText("Sorry if this takes a bit.", menuCanvas.width / 2, menuCanvas.height * 0.75, menuCanvas.width);
-
-                                        setTimeout(() => {
-                                            currentBoard = generateBoard();
-                                            solutionBoard = solver(currentBoard);
-                                            time = 999
-                                            gameState = "play"
-                                            menuContext.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
-                                            lastTimeMilliseconds = document.timeline.currentTime
-                                        }, 10)
-                                        lastTimeMilliseconds = document.timeline.currentTime
+                                        //currentBoard = generateBoard();
+                                        currentBoard = localStorage.getItem("boardCache").substring(0, 81);
+                                        localStorage.setItem("boardCache", localStorage.getItem("boardCache").substring(81))
+                                        solutionBoard = solver(currentBoard);
                                         time = 999
-                                        
+                                        lastTimeMilliseconds = document.timeline.currentTime
+                                        gameState = "play"
+                                        menuContext.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
                                         break;
                                     case 2:
                                         break;
@@ -574,24 +562,36 @@
                 
             }
 
+            if (localStorage.getItem("boardCache") == null) {
+                localStorage.setItem("boardCache", "");
+            }
 
+            const promise = new Promise((resolve, reject) => {
+                resolve(generateBoard());
+            })
 
             // This will be where most of the game's code takes place! :D (Update: Nevermind! Nope, not anymore)
             function main(currentTime) {
 
-                
+                if (!generatingBoard && localStorage.getItem("boardCache").length < 211) {
+                    generatingBoard = true;
+                    // Promises are confusing :(
+                    console.log("Test1")
+
+                    promise.then(value => {
+                        localStorage.setItem("boardCache", localStorage.getItem("boardCache") + value);
+                        generatingBoard = false;
+                    
+                    });
+
+                    console.log("Test2")
+                }
 
                 // Rendering code!
                 if (gameState == "play") {
                     drawGame(false)
                     localStorage.setItem("currentBoard", currentBoard);
                     localStorage.setItem("currentTime", time);
-                    // uh this is just a quick fix for the loading time still counting towards game time
-                    if ((document.timeline.currentTime - lastTimeMilliseconds) / 1000 > 0.1) {
-                        lastTimeMilliseconds = document.timeline.currentTime
-                    }
-                    
-                    time -= (document.timeline.currentTime - lastTimeMilliseconds) / 1000
                 }
 
                 else if (gameState == "pause") {
@@ -651,8 +651,7 @@
                     }
                 }
 
-
-                lastTimeMilliseconds = document.timeline.currentTime
+                
                 
 
                 requestAnimationFrame(main);
@@ -713,7 +712,9 @@
                         }
                     }
                     
+                    time -= (document.timeline.currentTime - lastTimeMilliseconds) / 1000
                 }
+                lastTimeMilliseconds = document.timeline.currentTime
 
                 // Drawing the... other stuff.
             

@@ -18,7 +18,7 @@
         <canvas style="background-color:rgba(0, 0, 0, 0);" id="game"></canvas>
         <canvas style="background-color:rgba(0, 0, 0, 0);" id="menu"></canvas>
         
-        <script src="generateBoard.js" async></script>
+        
         <script>
 
             // Get the HTML Canvas element!
@@ -622,7 +622,7 @@
 
                     menuContext.textAlign = "right"
                     menuContext.textBaseline = "top";
-                    menuContext.fillText(batteryLevel * 100 + "%", menuCanvas.width - menuCanvas.height / 100, menuCanvas.height / 100);
+                    menuContext.fillText(Math.round(batteryLevel * 100) + "%", menuCanvas.width - menuCanvas.height / 100, menuCanvas.height / 100);
                 }
 
                 else if (gameState == "title") {
@@ -640,11 +640,16 @@
                     // Continue, New Game, Extras, Options, Credits, Exit
                     // In extras: Rougelike mode, Tutorial, Back, Achievements
                     let buttonList = ["Resume Game", "New Game", "Extras", "Options", "Credits", "Exit"];
+                    if (currentBoard == null) {
+                        buttonList[0] = "No Saved Game!"
+                    }
                     for (let index = 0; index < 6; index++) {
-                        if (mouseOverlap(menuCanvas.width / 6, menuCanvas.height / 12 * (index * 1.5 + 2.9), menuCanvas.width / 6 * 4, menuCanvas.height / 12 * 1.2)) {
-                            menuContext.fillStyle = "rgba(255, 255, 255, 0.5)"
-                            menuContext.fillRect(menuCanvas.width / 6, menuCanvas.height / 12 * (index * 1.5 + 2.9), menuCanvas.width / 6 * 4, menuCanvas.height / 12 * 1.2)
-                            menuContext.fillStyle = boardColor
+                        if (index > 0 || currentBoard != null) {
+                            if (mouseOverlap(menuCanvas.width / 6, menuCanvas.height / 12 * (index * 1.5 + 2.9), menuCanvas.width / 6 * 4, menuCanvas.height / 12 * 1.2)) {
+                                menuContext.fillStyle = "rgba(255, 255, 255, 0.5)"
+                                menuContext.fillRect(menuCanvas.width / 6, menuCanvas.height / 12 * (index * 1.5 + 2.9), menuCanvas.width / 6 * 4, menuCanvas.height / 12 * 1.2)
+                                menuContext.fillStyle = boardColor
+                            }
                         }
                         menuContext.fillText(buttonList[index], menuCanvas.width / 2, menuCanvas.height / 12 * (index * 1.5 + 3.5), menuCanvas.width / 1.5)
                         menuContext.strokeRect(menuCanvas.width / 6, menuCanvas.height / 12 * (index * 1.5 + 2.9), menuCanvas.width / 6 * 4, menuCanvas.height / 12 * 1.2);

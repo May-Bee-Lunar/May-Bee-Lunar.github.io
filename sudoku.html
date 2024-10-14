@@ -42,6 +42,8 @@
             let lastTimeMilliseconds = 0;
             let blurRadius = 4;
             let currentBoard = null;
+            let win = false;
+            let lose = false;
             // 0 = Not compressed, 1 = A little compressed, 2 = Very very compressed like geez the window is practically a square
             let compressed;
 
@@ -478,6 +480,11 @@
                 currentBoard = localStorage.getItem("currentBoard");
                 solutionBoard = solver(currentBoard);
                 time = localStorage.getItem("currentTime")
+
+                if (!currentBoard.includes("0")) {
+                    win = true;
+                    
+                }
             }
 
             document.addEventListener("click", click)
@@ -496,7 +503,11 @@
                             let index = cordsToIndex(Math.floor((mouseX - boardElement.x) / (boardElement.width / 9)), Math.floor((mouseY - boardElement.y) / (boardElement.height / 9)))
                             if (currentBoard.charAt(index) == 0) {
                                 if (selectedDigit == solutionBoard.charAt(index)) {
-                                    currentBoard = changeCharAtIndex(currentBoard, index, selectedDigit)
+                                    currentBoard = changeCharAtIndex(currentBoard, index, selectedDigit);
+                                    if (!currentBoard.includes("0")) {
+                                        win = true;
+                                        
+                                    }
                                 }
                                 else {
                                     time -= 50;
@@ -537,6 +548,9 @@
                                     case 1:
                                         gameState = "loading"
                                         menuContext.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
+
+                                        win = false;
+                                        lose = false;
 
                                         // A super cool loading screen!
                                         menuContext.font = menuCanvas.height / 6 + "px sans-serif"
@@ -584,14 +598,20 @@
                 // Rendering code!
                 if (gameState == "play") {
                     drawGame(false)
+                    
                     localStorage.setItem("currentBoard", currentBoard);
                     localStorage.setItem("currentTime", time);
+                    
                     // uh this is just a quick fix for the loading time still counting towards game time
                     if ((document.timeline.currentTime - lastTimeMilliseconds) / 1000 > 0.1) {
                         lastTimeMilliseconds = document.timeline.currentTime
                     }
-                    
-                    time -= (document.timeline.currentTime - lastTimeMilliseconds) / 1000
+                    if (time <= 0) {
+                        lose = true;
+                    }
+                    if (!lose && !win) {
+                        time -= (document.timeline.currentTime - lastTimeMilliseconds) / 1000
+                    }
                 }
 
                 else if (gameState == "pause") {
@@ -742,6 +762,10 @@
                 gameContext.textAlign = "left"
                 gameContext.fillText(Math.ceil(time), timerElement.x + timerElement.height * 1.4, timerElement.y + timerElement.height * 0.6);
 
+                if (lose) {
+                    gameContext.fillText("Overtime!", timerElement.x, timerElement.y + elementUnit * 1.5)
+                }
+
                 // The menu button
                 if (mouseOverlap(menuButtonElement.x, menuButtonElement.y, menuButtonElement.width, menuButtonElement.y) && !paused) {
                     gameContext.fillStyle = "rgba(255, 255, 255, 0.5)";
@@ -762,37 +786,53 @@
                 gameContext.lineWidth = thickLineWidth;
 
                 // The number selection
-                for (let index = 0; index < 4; index++) {
-                    gameContext.beginPath();
-                    gameContext.lineWidth = index % 3 == 0 ? thickLineWidth : thinLineWidth;
-                    gameContext.moveTo(index * (numberSelectorElement.width / 3) + numberSelectorElement.x, numberSelectorElement.y);
-                    gameContext.lineTo(index * (numberSelectorElement.width / 3) + numberSelectorElement.x, numberSelectorElement.y + numberSelectorElement.height);
-                    gameContext.moveTo(numberSelectorElement.x, index * (numberSelectorElement.height / 3) + numberSelectorElement.y);
-                    gameContext.lineTo(numberSelectorElement.x + numberSelectorElement.width, index * (numberSelectorElement.height / 3) + numberSelectorElement.y);
-                    gameContext.stroke();
-                    gameContext.closePath();
-                }
-                for (let digitIndex = 0; digitIndex < 9; digitIndex++) {
-                    if (mouseOverlap(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3) && !paused) {
-                        gameContext.fillStyle = "rgba(255, 255, 255, 0.5)";
-                        gameContext.fillRect(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3);
-                        gameContext.fillStyle = boardColor;
-                    } else if (selectedDigit == digitIndex + 1) {
-                        gameContext.fillStyle = "rgba(255, 255, 255, 0.25)";
-                        gameContext.fillRect(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3);
-                        gameContext.fillStyle = boardColor;
+
+                if (!win) {
+                    for (let index = 0; index < 4; index++) {
+                        gameContext.beginPath();
+                        gameContext.lineWidth = index % 3 == 0 ? thickLineWidth : thinLineWidth;
+                        gameContext.moveTo(index * (numberSelectorElement.width / 3) + numberSelectorElement.x, numberSelectorElement.y);
+                        gameContext.lineTo(index * (numberSelectorElement.width / 3) + numberSelectorElement.x, numberSelectorElement.y + numberSelectorElement.height);
+                        gameContext.moveTo(numberSelectorElement.x, index * (numberSelectorElement.height / 3) + numberSelectorElement.y);
+                        gameContext.lineTo(numberSelectorElement.x + numberSelectorElement.width, index * (numberSelectorElement.height / 3) + numberSelectorElement.y);
+                        gameContext.stroke();
+                        gameContext.closePath();
                     }
-                    
-                    gameContext.fillText(digitIndex + 1, numberSelectorElement.x + (digitIndex % 3 + 0.5) * numberSelectorElement.width / 3, numberSelectorElement.y + ((digitIndex - digitIndex % 3) / 3 + 0.6) * numberSelectorElement.height / 3)
+                    for (let digitIndex = 0; digitIndex < 9; digitIndex++) {
+                        if (mouseOverlap(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3) && !paused) {
+                            gameContext.fillStyle = "rgba(255, 255, 255, 0.5)";
+                            gameContext.fillRect(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3);
+                            gameContext.fillStyle = boardColor;
+                        } else if (selectedDigit == digitIndex + 1) {
+                            gameContext.fillStyle = "rgba(255, 255, 255, 0.25)";
+                            gameContext.fillRect(numberSelectorElement.x + (digitIndex % 3) * numberSelectorElement.width / 3, numberSelectorElement.y + (digitIndex - digitIndex % 3) / 3 * numberSelectorElement.height / 3, numberSelectorElement.width / 3, numberSelectorElement.height / 3);
+                            gameContext.fillStyle = boardColor;
+                        }
+                        
+                        gameContext.fillText(digitIndex + 1, numberSelectorElement.x + (digitIndex % 3 + 0.5) * numberSelectorElement.width / 3, numberSelectorElement.y + ((digitIndex - digitIndex % 3) / 3 + 0.6) * numberSelectorElement.height / 3)
+                    }
                 }
 
                 // The hint button (the button doesn't do anything yet :()
-                if (mouseOverlap(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height) && !paused) {
-                    gameContext.fillStyle = "rgba(255, 255, 255, 0.5)";
-                    gameContext.fillRect(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height);
-                    gameContext.fillStyle = boardColor;
+                if (!win) {
+                    if (mouseOverlap(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height) && !paused) {
+                        gameContext.fillStyle = "rgba(255, 255, 255, 0.5)";
+                        gameContext.fillRect(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height);
+                        gameContext.fillStyle = boardColor;
+                    }
+                    gameContext.strokeRect(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height);
                 }
-                gameContext.strokeRect(noteButtonElement.x, noteButtonElement.y, noteButtonElement.width, noteButtonElement.height);
+
+                if (win) {
+                    // last min details uh yeah
+                    winIndicatorX = Math.min(noteButtonElement.x, numberSelectorElement.x)
+                    winIndicatorWidth = (noteButtonElement.x + noteButtonElement.width) - winIndicatorX
+                    winIndicatorHeight = (noteButtonElement.y + noteButtonElement.height) - numberSelectorElement.y
+
+                    gameContext.strokeRect(winIndicatorX, numberSelectorElement.y, winIndicatorWidth, winIndicatorHeight)
+                    gameContext.fillText("You", winIndicatorX + (winIndicatorWidth / 2), numberSelectorElement.y + (winIndicatorHeight / 2) - elementUnit / 2)
+                    gameContext.fillText("win! :D", winIndicatorX + (winIndicatorWidth / 2), numberSelectorElement.y + (winIndicatorHeight / 2) + elementUnit / 2)
+                }
 
                 if (paused) {
                     gameContext.fillStyle = "rgba(0, 0, 0, 0.5)"

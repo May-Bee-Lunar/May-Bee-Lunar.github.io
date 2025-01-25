@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            TrigonoMaytry
+        </title>
+        <style>
+            canvas {
+                background-color: white;
+                border: 4px solid black;
+                padding-left: 0;
+                padding-right: 0;
+                margin-left: auto;
+                margin-right: auto;
+                display: block;
+            }
+        </style>
+    </head>
+    <body style="overflow: hidden; margin: 0px">
+        <canvas id="canvas"></canvas>
+        <br>
+        Fill in only 2 values! 
+        <input id="angle" type="number" placeholder="Angle A (degrees)" class="numberInput">
+        <input id="adjacent" type="number" placeholder="Adjacent" class="numberInput">
+        <input id="opposite" type="number" placeholder="Opposite" class="numberInput">
+        <input id="hypotenuse" type="number" placeholder="Hypotenuse" class="numberInput">
+        <input id="calculate" type="button" value="Calculate!" class="buttonInput">
+        <input id="reset" type="button" value="Reset." class="buttonInput">
+        <br><br>
+        <div id="result"></div>
+        <br>
+        Options:<br>
+        Flip Triangle: <input id="flipToggle" type="checkbox"><br>
+        Use Radians: <input id="radianToggle" type="checkbox"><br>
+        Background Color: <input id="background-color" type="color" value="#ffffff"><br>
+        Foreground Color: <input id="foreground-color" type="color" value="#000000"><br>
+        <script>
+            const canvas = document.getElementById("canvas");
+            const context = canvas.getContext("2d");
+            const body = document.querySelector("body");
+            const numberInputs = document.querySelectorAll(".numberInput");
+            const calculateButton = document.getElementById("calculate");
+            const resetButton = document.getElementById("reset");
+            const result = document.getElementById("result");
+            const radianToggle = document.getElementById("radianToggle");
+            const flipToggle = document.getElementById("flipToggle");
+
+            // I need to reorganize my code...
+
+            flipToggle.addEventListener("click", draw);
+            radianToggle.addEventListener("click", changeAngleInputPlaceholder);
+            function changeAngleInputPlaceholder() {
+                numberInputs[0].placeholder = radianToggle.checked ? "Angle A (radians)" : "Angle A (degrees)";
+                draw();
+            }
+
+            resetButton.addEventListener("click", reset);
+            function reset() {
+                numberInputs.forEach((numberInput) => {
+                    numberInput.value = '';
+                    result.innerHTML = '';
+                })
+            }
+
+            canvas.width = 600;
+            canvas.height = 600;
+
+            let angle;
+            let adjacent;
+            let opposite;
+            let hypotenuse;
+
+            calculateButton.addEventListener("click", calculate);
+
+            // #region Checks how many inputs are filled in
+            function checkInputs() {
+                let filledInputs = 0;
+                numberInputs.forEach((input) => {
+                    if (input.value != '') {filledInputs++;}
+                });
+                return filledInputs;
+            }
+            // #endregion
+
+            // Calculation (this definitely isn't effecient lol)
+            function calculate() {
+                if (checkInputs() == 2) {
+                    angle = numberInputs[0].value == '' ? null : Number(numberInputs[0].value);
+                    adjacent = numberInputs[1].value == '' ? null : Number(numberInputs[1].value);
+                    opposite = numberInputs[2].value == '' ? null : Number(numberInputs[2].value);
+                    hypotenuse = numberInputs[3].value == '' ? null : Number(numberInputs[3].value);
+                    if (angle == null) {
+                        // Calculate angle (using a really weird way to use the switch statement lol)
+                        switch (null) {
+                            case adjacent:
+                                angle = Math.asin(opposite / hypotenuse);
+                                break;
+                            case opposite:
+                                angle = Math.acos(adjacent / hypotenuse);
+                                break;
+                            case hypotenuse:
+                                angle = Math.atan(opposite / adjacent);
+                        }
+                    } else {
+                        // If radian mode is OFF, we'd expect a degree input, so we have to convert it to radians, since internally radians are used.
+                        if (!radianToggle.checked) {
+                            angle *= (Math.PI / 180);
+                        }
+                    }
+
+                    if (adjacent == null) {
+                        if (hypotenuse != null) {
+                            adjacent = Math.cos(angle) * hypotenuse;
+                        } else if (opposite != null) {
+                            adjacent = opposite / Math.tan(angle);
+                        }
+                    }
+
+                    opposite = opposite == null ? Math.tan(angle) * adjacent : opposite;
+                    hypotenuse = hypotenuse == null ? Math.sqrt(adjacent * adjacent + opposite * opposite) : hypotenuse;
+
+                    result.innerHTML = "Angle: " + (radianToggle.checked ? angle + " radians" : (angle * (180 / Math.PI)) + "\u00B0") +
+                    "<br>Adjacent: " + adjacent +
+                    "<br>Opposite: " + opposite +
+                    "<br>Hypotenuse: " + hypotenuse +
+                    "<br>Area: " + (adjacent * opposite / 2) +
+                    "<br>Perimeter: " + (adjacent + opposite + hypotenuse);
+
+                    draw()
+                } else {
+                    result.innerHTML = checkInputs() + " values are filled in. There must be exactly 2! (because i can't be bothered to write code to check if 3 or 4 values will make a valid right triangle)";
+                }
+            }
+
+            // Drawing the triangle on the canvas
+            function draw() {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                let triangleWidth = Math.cos(angle) * 400;
+                let triangleHeight = Math.sin(angle) * 400;
+                let angleRadius = 40;
+                if (triangleWidth < angleRadius) {angleRadius = triangleWidth}
+                if (triangleHeight < angleRadius) {angleRadius = triangleHeight}
+                let horizontalScale = flipToggle.checked ? -1 : 1;
+                
+                context.lineWidth = 4;
+                context.beginPath();
+                context.moveTo(canvas.width / 2, canvas.height / 2 + triangleHeight / 2);
+                context.lineTo(canvas.width / 2 + (triangleWidth / 2 * horizontalScale), canvas.height / 2 + triangleHeight / 2);
+                context.lineTo(canvas.width / 2 + (triangleWidth / 2 * horizontalScale), canvas.height / 2 - triangleHeight / 2);
+                context.lineTo(canvas.width / 2 - (triangleWidth / 2 * horizontalScale), canvas.height / 2 + triangleHeight / 2);
+                // for some reason without this next line (& some modifying) there is a gap on the corner with the angle.
+                context.lineTo(canvas.width / 2, canvas.height / 2 + triangleHeight / 2);
+                context.stroke();
+
+                context.lineWidth = 2;
+                context.beginPath();
+                context.arc(canvas.width / 2 - (triangleWidth / 2 * horizontalScale), canvas.height / 2 + triangleHeight / 2, angleRadius, flipToggle.checked ? Math.PI : -angle, flipToggle.checked ? Math.PI + angle : 0)
+                context.stroke();
+
+                context.font = "40px sans-serif";
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.fillText(Math.round(adjacent * 1000) / 1000, canvas.width / 2, canvas.height / 2 + triangleHeight / 2 + 50);
+                context.fillText(Math.round(opposite * 1000) / 1000, canvas.width / 2 + triangleWidth / 2 * horizontalScale + 50 * horizontalScale, canvas.height / 2);
+                context.fillText(Math.round(hypotenuse * 1000) / 1000, canvas.width / 2 - 50 * horizontalScale, canvas.height / 2 - 50);
+                context.fillText(Math.round((radianToggle.checked ? angle : (angle * (180 / Math.PI))) * 1000) / 1000 + (radianToggle.checked ? " rad" : "\u00B0"), canvas.width / 2 - triangleWidth / 2 * horizontalScale - 50 * horizontalScale, canvas.height / 2 + triangleHeight / 2 + 50);
+                context.fillText(Math.round((radianToggle.checked ? (Math.PI / 2 - angle) : ((Math.PI / 2 - angle) * (180 / Math.PI))) * 1000) / 1000 + (radianToggle.checked ? " rad" : "\u00B0"), canvas.width / 2 + triangleWidth / 2 * horizontalScale + 50 * horizontalScale, canvas.height / 2 - triangleHeight / 2 - 50);
+            }
+
+            // Color Customization
+            const backgroundColor = document.getElementById("background-color");
+            backgroundColor.addEventListener("input", updateBackgroundColor);
+            function updateBackgroundColor(event) {
+                body.style.backgroundColor = event.target.value;
+                canvas.style.background = event.target.value;
+            }
+
+            const foregroundColor = document.getElementById("foreground-color");
+            foregroundColor.addEventListener("input", updateForegroundColor);
+            function updateForegroundColor(event) {
+                body.style.color = event.target.value;
+                canvas.style.borderColor = event.target.value;
+                context.strokeStyle = event.target.value;
+                context.fillStyle = event.target.value;
+                draw();
+            }
+
+            
+        </script>
+    </body>
+</html>

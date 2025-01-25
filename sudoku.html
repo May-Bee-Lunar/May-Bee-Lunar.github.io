@@ -511,6 +511,10 @@
                                 }
                                 else {
                                     time -= 50;
+                                    if (time <= 0) {
+                                        lose = true;
+                                        time = 0;
+                                    }
                                 }
                             }
                         } else if (mouseOverlap(menuButtonElement.x, menuButtonElement.y, menuButtonElement.width, menuButtonElement.height)) {

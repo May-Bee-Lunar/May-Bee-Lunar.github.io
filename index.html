@@ -2,12 +2,308 @@
 <html>
     <head>
         <title>
-            My Test Website!
+            MayOS!
         </title>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+        <style>
+            body {
+                font-family: "Noto Sans", sans-serif;
+                overflow: hidden; 
+            }
+
+
+
+            .icon {
+                position: absolute;
+                width: 128px;
+                height: 128px;
+            }
+
+
+
+            .window {
+                position: absolute;
+            }
+
+            .resizegrid {
+                position: absolute;
+                display: grid;
+                grid-template-columns: 8px 1fr 8px;
+                grid-template-rows: 8px 1fr 8px;
+
+                pointer-events: none;
+
+                width: 100%;
+                height: 100%;
+            }
+            .resizehandle {
+                pointer-events: all;
+            }
+
+            .windowcontent {
+                position: absolute;
+                display: flex;
+                flex-direction: column;
+                
+                width: 100%;
+                height: 100%;
+            }
+            .toolbar {
+                background-color: #444444;
+                height: 32px;
+
+                border: 4px solid #222222;
+                border-top-left-radius: 16px;
+                border-top-right-radius: 16px;
+
+                padding: 16px;
+
+                display: flex;
+                justify-content: space-between;
+
+                color: #DDDDDD;
+                font-size: 2em;
+            }
+            .innerwindow {
+                flex-grow: 1;
+
+                background-color: #DDDDDD;
+
+                border: 4px solid #AAAAAA;
+                border-bottom-right-radius: 16px;
+                border-bottom-left-radius: 16px;
+                border-top-width: 0px;
+            }
+
+
+
+            .buttonlist {
+                display: flex;
+                flex-direction: row;
+                height: 50%;
+            }
+            .button {
+                flex-grow: 1;
+                font-size: 1em;
+            }
+
+            .settingstablist {
+                display: flex;
+                height: 32px;
+            }
+            .settingstab {
+                flex-basis: 100px;
+                border: 4px solid #444444;
+                background-color: #BBBBBB
+            }
+        </style>
     </head>
     <body>
-        Hi!
-        <br>
-        <button onclick="location.href = 'testing';">Click to go to the testing page! This in itself is of course a test too.</button>
+        <img class="icon" id="home" style="left: 50px; top: 50px;" src="placeholder.webp">
+        <img class="icon" id="settings" style="left: 50px; top: 200px;" src="placeholder2.webp">
+
+        <div class="windowlist">
+            <div class="window" style="width: 800px; height: 600px; z-index: 0; left: 20px; top: 20px;">
+                <div class="windowcontent">
+                    <div class="toolbar">
+                        <div class="title">Settings</div>
+                        <div class="closebutton">✕</div>
+                    </div>
+    
+                    <div class="innerwindow">
+                        <div class="settingstablist">
+                            <div class="settingstab">Looks</div>
+                            <div class="settingstab">idk what</div>
+                            <div class="settingstab">else to put</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="resizegrid">
+                    <div class="resizehandle" id="nw"></div>
+                    <div class="resizehandle" id="n"></div>
+                    <div class="resizehandle" id="ne"></div>
+                    <div class="resizehandle" id="w"></div>
+                    <div class="filler"></div>
+                    <div class="resizehandle" id="e"></div>
+                    <div class="resizehandle" id="sw"></div>
+                    <div class="resizehandle" id="s"></div>
+                    <div class="resizehandle" id="se"></div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+
+            let selectedElement = null;
+            latestWindowZ = 0;
+
+
+            
+            // Selects an element
+            document.addEventListener("mousedown", (event) => {
+                selectedElement = event.target;
+
+                // Prevent text highlighting if the selected element is any in the array
+                if (["toolbar", "closebutton", "resizehandle"].includes(selectedElement.className)) {
+                    event.preventDefault();
+                }
+
+                // #region Move window to the front when clicked
+                let testElement = selectedElement;
+                while (testElement.nodeName != "HTML" && testElement.className != "window") {
+                    testElement = testElement.parentElement;
+                }
+                if (testElement.className == "window") {
+                    latestWindowZ++;
+                    testElement.style.zIndex = latestWindowZ
+                }
+                // #endregion
+
+                
+            });
+
+
+
+            // Many many things... Why did I put them all in one function?
+            document.addEventListener("mousemove", (event) => {
+                if (selectedElement == null) {
+                    // Highlight selected elements
+                    switch(event.target.className) {
+                        case "toolbar":
+                            document.body.style.cursor = "move";
+                            break;
+                        case "resizehandle":
+                            document.body.style.cursor = event.target.id + "-resize";
+                            break;
+                        default:
+                            document.body.style.cursor = "default";
+                            break;
+                    }
+                
+                } else {
+
+                    // Perform an action is an element is selected, based on the selected element
+                    switch(selectedElement.className) {
+                        // Move windows
+                        case "toolbar":
+                            windowElement = selectedElement.parentElement.parentElement;
+                            
+                            windowElement.style.left = clamp(pxtonum(windowElement.style.left) + event.movementX, 0, window.innerWidth - pxtonum(windowElement.style.width)) + "px";
+                            windowElement.style.top = clamp(pxtonum(windowElement.style.top) + event.movementY, 0, window.innerHeight - pxtonum(windowElement.style.height)) + "px";
+                            
+                            break;
+
+                        // Resize windows
+                        case "resizehandle":
+                            windowElement = selectedElement.parentElement.parentElement;
+
+                            if (selectedElement.id.slice(-1) == "e") {
+                                windowElement.style.width = clamp(pxtonum(windowElement.style.width) + event.movementX, 400, window.innerWidth - pxtonum(windowElement.style.left)) + "px";
+                            } else if (selectedElement.id.slice(-1) == "w") {
+                                let leftEdge = clamp(pxtonum(windowElement.style.left) + event.movementX, 0, pxtonum(windowElement.style.left) + pxtonum(windowElement.style.width) - 400)
+                                let rightEdge = pxtonum(windowElement.style.width) + pxtonum(windowElement.style.left);
+                                windowElement.style.width = rightEdge - leftEdge + "px";
+                                windowElement.style.left = leftEdge + "px";
+                            }
+
+                            if (selectedElement.id.slice(0, 1) == "s") {
+                                windowElement.style.height = clamp(pxtonum(windowElement.style.height) + event.movementY, 300, window.innerHeight - pxtonum(windowElement.style.top)) + "px";
+                            } else if (selectedElement.id.slice(0, 1) == "n") {
+                                let topEdge = clamp(pxtonum(windowElement.style.top) + event.movementY, 0, pxtonum(windowElement.style.top) + pxtonum(windowElement.style.height) - 300)
+                                let bottomEdge = pxtonum(windowElement.style.height) + pxtonum(windowElement.style.top);
+                                windowElement.style.height = bottomEdge - topEdge + "px";
+                                windowElement.style.top = topEdge + "px";
+                            }
+
+                            break;
+                    }
+                }
+            })
+
+
+
+            // Deselects any selected element
+            document.addEventListener("mouseup", (event) => {
+                selectedElement = null;
+            })
+
+
+
+            // Perform an action when something is clicked
+            document.addEventListener("click", (event) => {
+                switch(event.target.className) {
+                    // Close a window
+                    case "closebutton":
+                        event.target.parentElement.parentElement.parentElement.remove()
+                        break;
+
+                    // Open a window based on the icon clicked
+                    case "icon":
+                        switch(event.target.id) {
+                            case "home":
+                                newWindow(800, 600, "Home :D", `
+                                <header class="logoarea" style="font-size: 24px;">May\'s soon-to-be digital home!</header>
+                                <nav class="buttonlist">
+                                    <button class="button">Learn</button>
+                                    <button class="button">Games</button>
+                                    <button class="button">Blog</button>
+                                    <button class="button">Settings</button>
+                                    <button class="button">About</button>
+                                </nav>`)
+                                break;
+                            case "settings":
+                                newWindow(800, 600, "Settings", `
+                                <div>Hiii<\div>
+                                `)
+                        }
+                        break;
+                
+                    // #region Settings page
+                    case "settingstab":
+                        
+                    // #endregion
+                }
+            })
+
+
+
+            // Make a new window
+            function newWindow(width, height, title, htmlstuff) {
+                let newWindow = document.createElement("div");
+                newWindow.classList.add("window");
+                newWindow.innerHTML = `
+                <div class="windowcontent">
+                    <div class="toolbar">
+                        <div class="title">` + title + `</div>
+                        <div class="closebutton">✕</div>
+                    </div>
+    
+                    <div class="innerwindow">` + htmlstuff + `</div>
+                </div>
+
+                <div class="resizegrid">
+                    <div class="resizehandle" id="nw"></div>
+                    <div class="resizehandle" id="n"></div>
+                    <div class="resizehandle" id="ne"></div>
+                    <div class="resizehandle" id="w"></div>
+                    <div class="filler"></div>
+                    <div class="resizehandle" id="e"></div>
+                    <div class="resizehandle" id="sw"></div>
+                    <div class="resizehandle" id="s"></div>
+                    <div class="resizehandle" id="se"></div>
+                </div>`
+                latestWindowZ++;
+                newWindow.style = "width: " + width + "px; height: " + height + "px; z-index: " + latestWindowZ + "; left: " + (window.innerWidth - width) / 2 + "px; top: " + (window.innerHeight - height) / 2 + "px;"
+                document.querySelector(".windowlist").appendChild(newWindow)
+            }
+
+            // Turns "__px" into a usable number for calculations
+            function pxtonum(string) {return Number(string.slice(0, -2));}
+            
+            // Clamp a number
+            function clamp(number, min, max) {return number > max ? max : number < min ? min : number;}
+
+        </script>
     </body>
 </html>

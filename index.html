@@ -6,9 +6,24 @@
         </title>
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
         <style>
+
+            :root {
+                --backgroundcolor: #ffffff;
+                --windowtextcolor: #000000;
+                --windowbordercolor: #aaaaaa;
+                --windowcolor: #dddddd;
+                --toolbartextcolor: #dddddd;
+                --toolbarbordercolor: #222222;
+                --toolbarcolor: #444444;
+            }
+
+
+
             body {
+                background-color: var(--backgroundcolor);
                 font-family: "Noto Sans", sans-serif;
-                overflow: hidden; 
+                overflow: hidden;
+                color: var(--windowtextcolor)
             }
 
 
@@ -21,6 +36,7 @@
 
 
 
+            /* #region Window styling */
             .window {
                 position: absolute;
             }
@@ -49,10 +65,10 @@
                 height: 100%;
             }
             .toolbar {
-                background-color: #444444;
+                background-color: var(--toolbarcolor);
                 height: 32px;
 
-                border: 4px solid #222222;
+                border: 4px solid var(--toolbarbordercolor);
                 border-top-left-radius: 16px;
                 border-top-right-radius: 16px;
 
@@ -61,19 +77,23 @@
                 display: flex;
                 justify-content: space-between;
 
-                color: #DDDDDD;
+                color: var(--toolbartextcolor);
                 font-size: 2em;
             }
             .innerwindow {
                 flex-grow: 1;
+                flex-shrink: 1;
+                /* huh how did this work??? */
+                height: 100px;
 
-                background-color: #DDDDDD;
+                background-color: var(--windowcolor);
 
-                border: 4px solid #AAAAAA;
-                border-bottom-right-radius: 16px;
-                border-bottom-left-radius: 16px;
+                border: 4px solid var(--windowbordercolor);
+                border-bottom-right-radius: 4px;
+                border-bottom-left-radius: 4px;
                 border-top-width: 0px;
             }
+            /* #endregion */
 
 
 
@@ -87,15 +107,66 @@
                 font-size: 1em;
             }
 
+
+
+            /* #region Settings styles */
+            .settingswindow {
+                display: flex;
+                align-items: stretch;
+                flex-direction: column;
+
+                width: 100%;
+                height: 100%;
+            }
+
             .settingstablist {
+                flex: 0 0 32px;
+                background-color: var(--windowbordercolor);
                 display: flex;
                 height: 32px;
             }
             .settingstab {
-                flex-basis: 100px;
-                border: 4px solid #444444;
-                background-color: #BBBBBB
+                flex: 100px 1;
+                text-align: center;
+                align-content: center;
             }
+            .selectedsettingstab {
+                background-color: var(--windowcolor);
+            }
+            .settingsmainsection {
+                flex: 1;
+                height: 100px;
+
+                display: flex;
+            }
+            .settingspreview {
+                flex: 1 1;
+                background-color: var(--windowbordercolor);
+                text-align: center;
+                align-content: center;
+                overflow-y: auto;
+            }
+            .settingsoptionslist {
+                flex: 2;
+
+                padding: 32px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-auto-rows: 50px;
+                justify-items: center;
+                overflow-y: auto;
+            }
+
+            .settingsconfirmsection {
+                flex: 0 32px;
+                background-color: var(--windowbordercolor);
+                text-align: center;
+                align-content: center;
+            }
+            .deactive {
+                display: none;
+            }
+            /* #endregion */
         </style>
     </head>
     <body>
@@ -103,19 +174,18 @@
         <img class="icon" id="settings" style="left: 50px; top: 200px;" src="placeholder2.webp">
 
         <div class="windowlist">
+            <!--
             <div class="window" style="width: 800px; height: 600px; z-index: 0; left: 20px; top: 20px;">
                 <div class="windowcontent">
                     <div class="toolbar">
-                        <div class="title">Settings</div>
+                        <div class="title">System Settings</div>
                         <div class="closebutton">✕</div>
                     </div>
     
                     <div class="innerwindow">
-                        <div class="settingstablist">
-                            <div class="settingstab">Looks</div>
-                            <div class="settingstab">idk what</div>
-                            <div class="settingstab">else to put</div>
-                        </div>
+
+                        
+
                     </div>
                 </div>
 
@@ -131,6 +201,7 @@
                     <div class="resizehandle" id="se"></div>
                 </div>
             </div>
+            -->
         </div>
 
         <script>
@@ -155,8 +226,10 @@
                     testElement = testElement.parentElement;
                 }
                 if (testElement.className == "window") {
-                    latestWindowZ++;
-                    testElement.style.zIndex = latestWindowZ
+                    if (testElement.style.zIndex < latestWindowZ) {
+                        latestWindowZ++;
+                        testElement.style.zIndex = latestWindowZ
+                    }
                 }
                 // #endregion
 
@@ -169,7 +242,7 @@
             document.addEventListener("mousemove", (event) => {
                 if (selectedElement == null) {
                     // Highlight selected elements
-                    switch(event.target.className) {
+                    switch(event.target.className.split(' ')[0]) {
                         case "toolbar":
                             document.body.style.cursor = "move";
                             break;
@@ -184,7 +257,7 @@
                 } else {
 
                     // Perform an action is an element is selected, based on the selected element
-                    switch(selectedElement.className) {
+                    switch(selectedElement.className.split(' ')[0]) {
                         // Move windows
                         case "toolbar":
                             windowElement = selectedElement.parentElement.parentElement;
@@ -232,7 +305,7 @@
 
             // Perform an action when something is clicked
             document.addEventListener("click", (event) => {
-                switch(event.target.className) {
+                switch(event.target.className.split(' ')[0]) {
                     // Close a window
                     case "closebutton":
                         event.target.parentElement.parentElement.parentElement.remove()
@@ -253,20 +326,122 @@
                                 </nav>`)
                                 break;
                             case "settings":
-                                newWindow(800, 600, "Settings", `
-                                <div>Hiii<\div>
+                                let rootstyles = getComputedStyle(document.querySelector(":root"))
+                                newWindow(800, 600, "System Settings", `
+                                <div class="settingswindow">
+                                    <div class="settingstablist">
+                                        <div class="settingstab selectedsettingstab" id="visual">Visual</div>
+                                        <div class="settingstab" id="audio">Audio</div>
+                                        <div class="settingstab" id="other">Other</div>
+                                        <div class="settingstab" id="info">Info</div>
+                                    </div>
+                                    <div class="settingsmainsection">
+                                        <div class="settingspreview">
+                                            No option selected!
+                                        </div>
+                                        <div class="settingsoptionslist" id="visual">
+                                            Background color: <input type="color" class="backgroundcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--backgroundcolor") + `">
+                                            Window color: <input type="color" class="windowcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowcolor") + `">
+                                            Window border color: <input type="color" class="windowbordercolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowbordercolor") + `">
+                                            Window text color: <input type="color" class="windowtextcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowtextcolor") + `">
+                                            Toolbar color: <input type="color" class="toolbarcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbarcolor") + `">
+                                            Toolbar border color: <input type="color" class="toolbarbordercolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbarbordercolor") + `">
+                                            Toolbar text color: <input type="color" class="toolbartextcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbartextcolor") + `">
+                                        </div>
+                                        <div class="settingsoptionslist deactive" id="audio">Nothing here yet!</div>
+                                        <div class="settingsoptionslist deactive" id="other">Nothing here yet!</div>
+                                        <div class="settingsoptionslist deactive" id="info">
+                                            Operating System:<div>mayOS</div>
+                                            Developer:<div>May</div>
+                                            <div style="grid-column: 1 / 3">And most importantly... NO AI!!!</div> 
+                                            <div style="grid-column: 1 / 3">Also, any help would be welcome! :D (no pay/compensation tho (I'm broke ;-;) so it's ok if not.)</div>
+                                            <div style="grid-column: 1 / 3">https://github.com/May-Bee-Lunar/May-Bee-Lunar.github.io</div> 
+                                            <div style="grid-column: 1 / 3">Also, clearing your web cache or local storage or whatever will delete ALL PROGRESS! (i'll add stuff to make progress on later) So... don't do that :/</div> 
+                                        </div>
+                                    </div>
+                                    <div class="settingsconfirmsection deactive">
+                                        You have unsaved changes! <input type="button" value="Save" class="settingsconfirmbutton">
+                                    </div>
+                                </div>
                                 `)
                         }
                         break;
                 
                     // #region Settings page
                     case "settingstab":
+                        (event.target.parentElement.querySelectorAll(".settingstab")).forEach(element => {
+                            element.classList.remove("selectedsettingstab");
+                        });
+                        event.target.parentElement.parentElement.querySelector(".settingsmainsection").querySelectorAll(".settingsoptionslist").forEach(element => {
+                            element.classList.add("deactive");
+                        });
                         
+                        event.target.parentElement.parentElement.querySelector(".settingsmainsection").querySelector("#" + event.target.id).classList.remove("deactive");
+
+                        event.target.classList.add("selectedsettingstab");
+                        break;
+                    case "settingsconfirmbutton":
+                        
+                        let settings = {};
+                        event.target.parentElement.parentElement.querySelector(".settingsmainsection").querySelectorAll("input").forEach((element) => {
+                            document.querySelector(":root").style.setProperty("--" + element.className, element.value);
+                            settings[element.className] = element.value;
+                        })
+
+                        console.log(settings)
+
+                        localStorage.setItem("settings", JSON.stringify(settings));
+
+                        event.target.parentElement.classList.add("deactive");
                     // #endregion
                 }
             })
 
 
+
+            // Shows the window preview for settings
+            function windowPreview(element) {
+                let settingsOptionsList = element.parentElement
+                let settingsMainSection = settingsOptionsList.parentElement;
+                settingsMainSection.querySelector(".settingspreview").innerHTML = `
+                <div style="width: 100%; height: 100%; align-content: center; background-color: ` + settingsOptionsList.querySelector(".backgroundcolor").value + `;">
+                    <div class="windowpreview" style="display: flex; flex-direction: column; height: 256px; margin: 32px;">
+                        <div class="toolbarpreview" 
+                        style="background-color: ` + settingsOptionsList.querySelector(".toolbarcolor").value +`;
+                        height: 32px;
+        
+                        border: 4px solid ` + settingsOptionsList.querySelector(".toolbarbordercolor").value + `;
+                        border-top-left-radius: 16px;
+                        border-top-right-radius: 16px;
+        
+                        padding: 16px;
+                        color: ` + settingsOptionsList.querySelector(".toolbartextcolor").value + `;
+                        font-size: 2em;">
+                            Title!
+                        </div>
+                        <div class="innerwindowpreview" style="background-color: ` + settingsOptionsList.querySelector(".windowcolor").value + `;
+                        padding: 16px;
+                        border: 4px solid ` + settingsOptionsList.querySelector(".windowbordercolor").value + `;
+                        border-bottom-right-radius: 16px;
+                        border-bottom-left-radius: 16px;
+                        border-top-width: 0px;
+                        color: ` + settingsOptionsList.querySelector(".windowtextcolor").value + `;
+                        flex-grow: 1;">
+                            This is some sample text! Pretty cool, right?
+                        </div>
+                    </div>
+                </div>
+                `
+
+                element.parentElement.parentElement.parentElement.querySelector(".settingsconfirmsection").classList.remove("deactive");
+            }
+
+            if (localStorage.getItem("settings")) {
+                let settings = JSON.parse(localStorage.getItem("settings"));
+                for (let key in settings) {
+                    document.querySelector(":root").style.setProperty("--" + key, settings[key]);
+                }
+            }
 
             // Make a new window
             function newWindow(width, height, title, htmlstuff) {

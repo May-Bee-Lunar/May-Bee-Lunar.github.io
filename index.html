@@ -8,10 +8,11 @@
         <style>
 
             :root {
-                --backgroundcolor: #ffffff;
+                --backgroundcolor: #dddddd;
                 --windowtextcolor: #000000;
                 --windowbordercolor: #aaaaaa;
                 --windowcolor: #dddddd;
+                --secondarywindowcolor: #aaaaaa;
                 --toolbartextcolor: #dddddd;
                 --toolbarbordercolor: #222222;
                 --toolbarcolor: #444444;
@@ -33,8 +34,6 @@
                 width: 128px;
                 height: 128px;
             }
-
-
 
             /* #region Window styling */
             .window {
@@ -120,7 +119,7 @@
 
             .settingstablist {
                 flex: 0 0 32px;
-                background-color: var(--windowbordercolor);
+                background-color: var(--secondarywindowcolor);
                 display: flex;
                 height: 32px;
             }
@@ -140,7 +139,7 @@
             }
             .settingspreview {
                 flex: 1 1;
-                background-color: var(--windowbordercolor);
+                background-color: var(--secondarywindowcolor);
                 text-align: center;
                 align-content: center;
                 overflow-y: auto;
@@ -151,26 +150,106 @@
                 padding: 32px;
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                grid-auto-rows: 50px;
                 justify-items: center;
                 overflow-y: auto;
             }
 
             .settingsconfirmsection {
                 flex: 0 32px;
-                background-color: var(--windowbordercolor);
+                background-color: var(--secondarywindowcolor);
                 text-align: center;
                 align-content: center;
             }
+            /* #endregion */
+        
+            /* #region Diary styling */
+            .diarywindow {
+                height: 100%;
+                overflow-y: auto;
+
+                display: flex;
+                flex-direction: column;
+            }
+
+            .diarysearchsection {
+                flex: 0 0 32px;
+                display: flex;
+            }
+            .diarysearchbar {
+                flex: 1;
+            }
+            .diarysearchbutton {
+                flex: 0 0 100px;
+            }
+            .diaryfilterbutton {
+                flex: 0 0 100px;
+            }
+
+            .diaryfiltersection {
+                padding: 32px;
+                text-align: center;
+                background-color: var(--secondarywindowcolor);
+            }
+
+            .diarycategoriessection {
+                display: flex;
+                flex-wrap: wrap;
+                column-gap: 16px;
+                justify-content: center;
+            }
+            .diarycategory {
+                white-space: nowrap;
+            }
+
+            .diarydatesection {
+                display: flex;
+            }
+            .diarydateinput {
+                width: 50px;
+                flex: 1;
+            }
+
+            .diarylengthsection {
+                display: flex;
+            }
+            .diarylengthinput {
+                width: 50px;
+                flex: 1;
+            }
+
+            .diarysortsection {
+                display: flex;
+                flex-wrap: wrap;
+                column-gap: 16px;
+                justify-content: center;
+            }
+            .diarysortoption {
+                white-space: nowrap;
+            }
+            
+            .diarymainsection {
+                flex: 1;
+                padding: 32px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            .diarypreviewcard {
+                background-color: var(--secondarywindowcolor);
+                text-align: center;
+                padding: 16px;
+            }
+            /* #endregion */
+
             .deactive {
                 display: none;
             }
-            /* #endregion */
         </style>
     </head>
     <body>
         <img class="icon" id="home" style="left: 50px; top: 50px;" src="homeicon.webp">
         <img class="icon" id="settings" style="left: 50px; top: 200px;" src="settingsicon.webp">
+        <img class="icon" id="diary" style="left: 50px; top: 350px;" src="diaryicon.webp">
 
         <div class="windowlist">
             <!--
@@ -183,7 +262,7 @@
     
                     <div class="innerwindow">
 
-                        
+                        You know there is a problem when most of the html is in strings in javascript, lol.
 
                     </div>
                 </div>
@@ -208,7 +287,82 @@
             let selectedElement = null;
             latestWindowZ = 0;
 
-
+            // please tell me if there is a better way to store my blogs...
+            let diaryEntries = [
+                {
+                    date: new Date("2025-6-4"),
+                    title: "First diary entry!",
+                    description: "I'm not quite sure what to put here. (not real entry)",
+                    categories: ["update", "project", "advertisement", "other"],
+                    length: 2,
+                    entry: "<p>What do I even put?</p>"
+                },
+                {
+                    date: new Date("2025-6-5"),
+                    title: "Second diary entry!",
+                    description: "Yeah, these diary entries are just for testing. (not real entry)",
+                    categories: ["update", "advertisement", "other"],
+                    length: 7,
+                    entry: "<p>I have no intention of actually writing a 7 minute entry lol</p>"
+                },
+                {
+                    date: new Date("2025-6-6"),
+                    title: "Third diary entry!",
+                    description: "This is actually a blog, not a diary... (not real entry)",
+                    categories: ["advertisement", "other"],
+                    length: 6,
+                    entry: "<p>I picked the minute numbers based on the number 2763, which is a very cool number.</p>"
+                },
+                {
+                    date: new Date("2025-6-7"),
+                    title: "Fourth diary entry!",
+                    description: "Four is my favorite number! (not real entry)",
+                    categories: ["update", "project"],
+                    length: 3,
+                    entry: "<p>I hope I put more effort into future diary entries.</p><p>well um i guess this is the future since apparently the diary entry was written 2 days in the future. well by the time you are reading this idk when it will be... ok uh bye I guess!</p>"
+                },
+                {
+                    date: new Date("2025-6-5"),
+                    title: "dream",
+                    description: "why do i dream weird stuff",
+                    categories: ["other"],
+                    length: 1,
+                    entry: `
+                    <div style="overflow-y: auto;">
+                    <img src="dream.webp" style="width: 100%">
+                        <p style="margin: 32px;">
+                            I was in a maze of corridors where everything seemed to curve upwards.
+                            Almost like a world where gravity was inverted and I was near the center.
+                            The halls seemed to be cut into different colored sections.
+                            Near the intersection of orange, yellow, and green, there was a hall from my middle school.
+                            In there was a classroom, where we found
+                        </p>
+                    </div>`
+                },
+                {
+                    date: new Date("2025-6-5"),
+                    title: "Update 1! :D",
+                    description: "Added a blog, stylized as a diary!",
+                    categories: ["other"],
+                    length: 1,
+                    entry: `
+                    <div style="overflow-y: auto;">
+                    <img src="update1.webp" style="width: 100%">
+                        <div style="padding: 32px;">
+                            <p>Hey, you are reading what I added!</p>
+                            <p>
+                                This update basically just added the diary.
+                                You might be wondering, "how come this is update 1? You made updates before this!"
+                                and my response is that this is the first update because it's the first one where I bothered to actually number it. ¯\\_(ツ)_/¯
+                            </p>
+                            <p>
+                                (p.s. The girl in the image is Bay, my self-insert semi-mascot!
+                                Also she has the power to change colors, because... self-insert powers! She's normally gray.)
+                            </p>
+                        </div>
+                    </div>`
+                }
+            ]
             
             // Selects an element
             document.addEventListener("mousedown", (event) => {
@@ -237,10 +391,10 @@
 
 
 
-            // Many many things... Why did I put them all in one function?
+            // Window moving and resizing
             document.addEventListener("mousemove", (event) => {
                 if (selectedElement == null) {
-                    // Highlight selected elements
+                    // Changes mouse to represent the action
                     switch(event.target.className.split(' ')[0]) {
                         case "toolbar":
                             document.body.style.cursor = "move";
@@ -319,9 +473,10 @@
                                     <div class="hometext">
                                         <header style="font-size: 4em;">Hey, I'm May!</header>
                                         <p>(My pronouns are she/it ☆*:.｡.o(≧▽≦)o.｡.:*☆)</p>
+                                        <p>Please start with changing the settings to your likings (unless you wanna live in perpetual grayscale...) After that, currently there isn't much to do, but I'll add more, I promise!</p>
                                         <p>(Site inspired by <a href="https://github.com/syxanash/awesome-web-desktops">web desktops</a>, but still kinda my own thing! I first saw <a href="https://www.sharyap.com/">shar's site</a>, so that's mostly my inspiration-ish. Also the general concept of a desktop I guess.)</p>
                                         <header style="font-size: 2em;">About me</header>
-                                        <p>I'm (kinda... still mostly a beginner) an artist, programmer, and hopefully more soon! 
+                                        <p>I'm (kinda... still mostly a beginner) an artist, programmer, and hopefully more soon!
                                             Other than that... there isn't much about me (;-;) I'm very boring.
                                             I guess I like carrots, strawberries, and blahaj.
                                         </p>
@@ -344,13 +499,21 @@
                                             No option selected!
                                         </div>
                                         <div class="settingsoptionslist" id="visual">
-                                            Background color: <input type="color" class="backgroundcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--backgroundcolor") + `">
-                                            Window color: <input type="color" class="windowcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowcolor") + `">
-                                            Window border color: <input type="color" class="windowbordercolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowbordercolor") + `">
-                                            Window text color: <input type="color" class="windowtextcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowtextcolor") + `">
-                                            Toolbar color: <input type="color" class="toolbarcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbarcolor") + `">
-                                            Toolbar border color: <input type="color" class="toolbarbordercolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbarbordercolor") + `">
-                                            Toolbar text color: <input type="color" class="toolbartextcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbartextcolor") + `">
+                                            <label for="backgroundcolor` + latestWindowZ + `">Background color:</label>
+                                            <input type="color" class="backgroundcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--backgroundcolor") + `" id="backgroundcolor` + latestWindowZ + `">
+                                            <label for="windowcolor` + latestWindowZ + `">Window color:</label>
+                                            <input type="color" class="windowcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowcolor") + `" id="windowcolor` + latestWindowZ + `">
+                                            <label for="secondarywindowcolor` + latestWindowZ + `">Secondary window color:</label>
+                                            <input type="color" class="secondarywindowcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--secondarywindowcolor") + `" id="secondarywindowcolor` + latestWindowZ + `">
+                                            <label for="windowbordercolor` + latestWindowZ + `">Window border color:</label>
+                                            <input type="color" class="windowbordercolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowbordercolor") + `" id="windowbordercolor` + latestWindowZ + `">
+                                            <label for="windowtextcolor` + latestWindowZ + `">Window text color:</label>
+                                            <input type="color" class="windowtextcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--windowtextcolor") + `" id="windowtextcolor` + latestWindowZ + `">
+                                            <label for="toolbarcolor` + latestWindowZ + `">Toolbar color:</label>
+                                            <input type="color" class="toolbarcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbarcolor") + `" id="toolbarcolor` + latestWindowZ + `">
+                                            <label for="toolbarbordercolor` + latestWindowZ + `">Toolbar border color:</label> <input type="color" class="toolbarbordercolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbarbordercolor") + `" id="toolbarbordercolor` + latestWindowZ + `">
+                                            <label for="toolbartextcolor` + latestWindowZ + `">Toolbar text color:</label>
+                                            <input type="color" class="toolbartextcolor" oninput="windowPreview(this)" value="` + rootstyles.getPropertyValue("--toolbartextcolor") + `" id="toolbartextcolor` + latestWindowZ + `">
                                         </div>
                                         <div class="settingsoptionslist deactive" id="audio">Nothing here yet!</div>
                                         <div class="settingsoptionslist deactive" id="other">Nothing here yet!</div>
@@ -359,7 +522,7 @@
                                             <p>Developer:</p><p>May</p>
                                             <p style="grid-column: 1 / 3">And most importantly... NO AI!!!</p>
                                             <p style="grid-column: 1 / 3">Also, any help would be welcome! :D (no pay/compensation tho (I'm broke ;-;) so it's ok if not.)</p>
-                                            <p style="grid-column: 1 / 3">https://github.com/May-Bee-Lunar/May-Bee-Lunar.github.io</p>
+                                            <a style="grid-column: 1 / 3" href="https://github.com/May-Bee-Lunar/May-Bee-Lunar.github.io">https://github.com/May-Bee-Lunar/May-Bee-Lunar.github.io</a>
                                             <p style="grid-column: 1 / 3">Also, clearing your web cache or local storage or whatever will delete ALL PROGRESS! (i'll add stuff to make progress on later) So... don't do that :/</p>
                                         </div>
                                     </div>
@@ -368,6 +531,75 @@
                                     </div>
                                 </div>
                                 `)
+                                break;
+                            case "diary":
+                                newWindow(800, 600, "May's diary", `
+                                <div class="diarywindow">
+                                    <div class="diarysearchsection">
+                                        <input type="search" class="diarysearchbar">
+                                        <input type="button" class="diarysearchbutton" value="Search">
+                                        <input type="button" class="diaryfilterbutton" value="Filters">
+                                    </div>
+                                    <div class="diaryfiltersection deactive">
+                                        <header style="font-size: 1.5em;">Categories:</header>
+                                        <div class="diarycategoriessection">
+                                            <div class="diarycategory">
+                                                <label for="diarycategoryupdate` + latestWindowZ + `">Updates:</label>
+                                                <input class="diarycategoryupdate" type="checkbox" id="diarycategoryupdate` + latestWindowZ + `" checked>
+                                            </div>
+                                            <div class="diarycategory">
+                                                <label for="diarycategoryproject` + latestWindowZ + `">Projects:</label>
+                                                <input class="diarycategoryproject" type="checkbox" id="diarycategoryproject` + latestWindowZ + `" checked>
+                                            </div>
+                                            <div class="diarycategory">
+                                                <label for="diarycategoryadvertisement` + latestWindowZ + `">Advertisements:</label>
+                                                <input class="diarycategoryadvertisement" type="checkbox" id="diarycategoryadvertisement` + latestWindowZ + `" checked>
+                                            </div>
+                                            <div class="diarycategory">
+                                                <label for="diarycategoryother` + latestWindowZ + `">Other:</label>
+                                                <input class="diarycategoryother" type="checkbox" id="diarycategoryother` + latestWindowZ + `" checked>
+                                            </div>
+                                        </div>
+                                        <header style="font-size: 1.5em;">Date:</header>
+                                        <div class="diarydatesection">
+                                            <input class="diarystartdate diarydateinput" type="text" placeholder="From" onfocus="(this.type='date')" onblur="(this.type='text')">
+                                            &nbsp;to&nbsp;
+                                            <input class="diaryenddate diarydateinput" type="text" placeholder="To" onfocus="(this.type='date')" onblur="(this.type='text')">
+                                        </div>
+                                        <header style="font-size: 1.5em;">Reading Time:</header>
+                                        <div class="diarylengthsection">
+                                            <input class="diaryminimumlength diarylengthinput" id="diaryminimumlength` + latestWindowZ + `" type="number" placeholder="(minutes)">
+                                            <label for="diaryminimumlength` + latestWindowZ + `">&nbsp;minutes</label>
+                                            &nbsp;-&nbsp;
+                                            <input class="diarymaximumlength diarylengthinput" id="diarymaximumlength` + latestWindowZ + `" type="number" placeholder="(minutes)">
+                                            <label for="diarymaximumlength` + latestWindowZ + `">&nbsp;minutes</label>
+                                        </div>
+                                        <header style="font-size: 1.5em;">Sort:</header>
+                                        <div class="diarysortsection">
+                                            <div class="diarysortoption">
+                                                <label for="latest` + latestWindowZ + `">Latest:</label>
+                                                <input type="radio" value="latest" id="latest` + latestWindowZ + `" name="diarysort` + latestWindowZ + `" checked>
+                                            </div>
+                                            <div class="diarysortoption">
+                                                <label for="oldest` + latestWindowZ + `">Oldest:</label>
+                                                <input type="radio" value="oldest" id="oldest` + latestWindowZ + `" name="diarysort` + latestWindowZ + `">
+                                            </div>
+                                            <div class="diarysortoption">
+                                                <label for="alphabeticallyascending` + latestWindowZ + `">Alphabetically (A-Z):</label>
+                                                <input type="radio" value="alphabeticallyascending" id="alphabeticallyascending` + latestWindowZ + `" name="diarysort` + latestWindowZ + `">
+                                            </div>
+                                            <div class="diarysortoption">
+                                                <label for="alphabeticallydescending` + latestWindowZ + `">Alphabetically (Z-A):</label>
+                                                <input type="radio" value="alphabeticallydescending" id="alphabeticallydescending` + latestWindowZ + `" name="diarysort` + latestWindowZ + `">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="diarymainsection">
+                                        Welcome to my diary! Start with searching for diary entries!
+                                    </div>
+                                </div>
+                                `)
+                                break;
                         }
                         break;
                 
@@ -392,13 +624,93 @@
                             settings[element.className] = element.value;
                         })
 
-                        console.log(settings)
-
                         localStorage.setItem("settings", JSON.stringify(settings));
 
                         event.target.parentElement.classList.add("deactive");
                         break;
                     // #endregion
+
+                    // #region Diary page
+                    case "diaryfilterbutton":
+                        event.target.parentElement.parentElement.querySelector(".diaryfiltersection").classList.toggle("deactive");
+                        break;
+
+                    case "diarysearchbutton":
+                        let diaryFilterSection = event.target.parentElement.parentElement.querySelector(".diaryfiltersection");
+                        let filteredDiaryEntries = diaryEntries.slice();
+
+                        let searchCategories = [];
+                        diaryFilterSection.querySelector(".diarycategoriessection").querySelectorAll("input").forEach(category => {
+                            if (category.checked) {
+                                searchCategories.push(category.className.slice(13));
+                            }
+                        })
+                        filteredDiaryEntries = filteredDiaryEntries.filter((diaryEntry) => diaryEntry.categories.some(category => searchCategories.includes(category)));
+
+                        let minimumDate = new Date(diaryFilterSection.querySelector(".diarydatesection").querySelector(".diarystartdate").value);
+                        if (minimumDate != "Invalid Date") {
+                            filteredDiaryEntries = filteredDiaryEntries.filter((diaryEntry) => minimumDate <= diaryEntry.date);
+                        }
+                        let maximumDate = new Date(diaryFilterSection.querySelector(".diarydatesection").querySelector(".diaryenddate").value);
+                        if (maximumDate != "Invalid Date") {
+                            // I have no idea why the date is a day behind but idc.
+                            filteredDiaryEntries = filteredDiaryEntries.filter((diaryEntry) => diaryEntry.date <= maximumDate.getTime() + (24 * 60 * 60 * 1000));
+                        }
+
+                        let minimumlength = diaryFilterSection.querySelector(".diarylengthsection").querySelector(".diaryminimumlength").value;
+                        if (minimumlength) {
+                            filteredDiaryEntries = filteredDiaryEntries.filter((diaryEntry) => minimumlength <= diaryEntry.length);
+                        }
+                        let maximumlength = diaryFilterSection.querySelector(".diarylengthsection").querySelector(".diarymaximumlength").value;
+                        if (maximumlength) {
+                            filteredDiaryEntries = filteredDiaryEntries.filter((diaryEntry) => diaryEntry.length <= maximumlength);
+                        }
+
+                        let searchQuery = diaryFilterSection.parentElement.querySelector(".diarysearchsection").querySelector(".diarysearchbar").value;
+                        if (searchQuery) {
+                            filteredDiaryEntries = filteredDiaryEntries.filter((diaryEntry) => diaryEntry.description.toLowerCase().includes(searchQuery.toLowerCase()) || diaryEntry.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                        }
+
+                        let sortMode = diaryFilterSection.querySelector(".diarysortsection").querySelector("input:checked").value
+                        switch (sortMode) {
+                            case "latest":
+                                filteredDiaryEntries.sort((diaryEntry1, diaryEntry2) => diaryEntry2.date.getTime() - diaryEntry1.date.getTime());
+                                break;
+                            case "oldest":
+                                filteredDiaryEntries.sort((diaryEntry1, diaryEntry2) => diaryEntry1.date.getTime() - diaryEntry2.date.getTime());
+                                break;
+
+                            // who ever actually uses alphabetical sorting
+                            case "alphabeticallyascending":
+                                filteredDiaryEntries.sort((diaryEntry1, diaryEntry2) => diaryEntry1.title.localeCompare(diaryEntry2.title));
+                                break;
+                            case "alphabeticallydescending":
+                                filteredDiaryEntries.sort((diaryEntry1, diaryEntry2) => diaryEntry2.title.localeCompare(diaryEntry1.title));
+                                break;
+                        }
+
+                        let diaryMainSection = diaryFilterSection.parentElement.querySelector(".diarymainsection");
+                        diaryMainSection.innerHTML = "";
+                        filteredDiaryEntries.forEach((diaryEntry) => {
+                            let newDiaryPreviewCard = document.createElement("div");
+                            newDiaryPreviewCard.classList.add("diarypreviewcard");
+                            newDiaryPreviewCard.innerHTML = `
+                            <header style="font-size: 2em;">` + diaryEntry.title + `</header>
+                            <p>` + diaryEntry.description + `</p>
+                            <p>Categories: ` + diaryEntry.categories.map((category) => category.charAt(0).toUpperCase() + category.slice(1)).join(", ") + ` • Est. reading time: ` + diaryEntry.length + ` min • ` + diaryEntry.date.toLocaleDateString("en-US", {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) + `
+                            `
+                            newDiaryPreviewCard.addEventListener("click", () => newWindow(800, 600, diaryEntry.title, diaryEntry.entry));
+                            diaryMainSection.appendChild(newDiaryPreviewCard);
+                        })
+
+                        if (filteredDiaryEntries.length == 0) {
+                            diaryMainSection.innerHTML = "No entries found!"
+                        }
+                        
+
+                        console.log(filteredDiaryEntries);
+                        break;
+                    // #endregion Diary page
                 }
             })
 
@@ -409,11 +721,10 @@
                 let settingsOptionsList = element.parentElement
                 let settingsMainSection = settingsOptionsList.parentElement;
                 settingsMainSection.querySelector(".settingspreview").innerHTML = `
-                <div style="width: 100%; height: 100%; align-content: center; background-color: ` + settingsOptionsList.querySelector(".backgroundcolor").value + `;">
-                    <div class="windowpreview" style="display: flex; flex-direction: column; height: 256px; margin: 32px;">
+                <div style="width: 100%; height: 100%; align-content: center; background-color: ` + settingsOptionsList.querySelector(".backgroundcolor").value + `; text-align: center;">
+                    <div class="windowpreview" style="display: flex; flex-direction: column; margin: 32px;">
                         <div class="toolbarpreview" 
                         style="background-color: ` + settingsOptionsList.querySelector(".toolbarcolor").value +`;
-                        height: 32px;
         
                         border: 4px solid ` + settingsOptionsList.querySelector(".toolbarbordercolor").value + `;
                         border-top-left-radius: 16px;
@@ -425,14 +736,20 @@
                             Title!
                         </div>
                         <div class="innerwindowpreview" style="background-color: ` + settingsOptionsList.querySelector(".windowcolor").value + `;
-                        padding: 16px;
                         border: 4px solid ` + settingsOptionsList.querySelector(".windowbordercolor").value + `;
-                        border-bottom-right-radius: 16px;
-                        border-bottom-left-radius: 16px;
+                        border-bottom-right-radius: 4px;
+                        border-bottom-left-radius: 4px;
                         border-top-width: 0px;
                         color: ` + settingsOptionsList.querySelector(".windowtextcolor").value + `;
-                        flex-grow: 1;">
-                            This is some sample text! Pretty cool, right?
+                        flex-grow: 1;
+                        display: flex;
+                        flex-direction: column;">
+                            <div style="background-color: ` + settingsOptionsList.querySelector(".windowcolor").value + `; padding: 16px; flex: 1;">
+                                This is some sample text! Pretty cool, right?
+                            </div>
+                            <div style="background-color: ` + settingsOptionsList.querySelector(".secondarywindowcolor").value + `; padding: 16px; flex: 1;">
+                                This is sample text with a secondary background!
+                            </div>
                         </div>
                     </div>
                 </div>
